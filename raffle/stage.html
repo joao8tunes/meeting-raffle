@@ -1,0 +1,548 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<style>
+  :root {
+    --ink: #f8fafc;
+    --muted: #c7d2fe;
+    --gold: #fbbf24;
+    --panel: rgba(255, 255, 255, 0.07);
+    --panel-line: rgba(255, 255, 255, 0.14);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: transparent; }
+  body {
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif,
+      "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji";
+    color: var(--ink);
+  }
+  .stage {
+    position: relative; height: 100%; overflow: hidden; border-radius: 16px; padding: 16px 20px;
+    display: flex; flex-direction: column; gap: 10px;
+    background:
+      radial-gradient(900px 420px at 15% -20%, rgba(139, 92, 246, 0.55), transparent 60%),
+      radial-gradient(700px 420px at 110% 120%, rgba(14, 165, 233, 0.45), transparent 60%),
+      linear-gradient(160deg, #0b1026, #1e1b4b);
+  }
+  .top { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; }
+  .prize { font-size: 22px; font-weight: 800; letter-spacing: 0.2px; white-space: nowrap; overflow: hidden;
+    text-overflow: ellipsis; }
+  .status { font-size: 14px; color: var(--muted); white-space: nowrap; }
+  .main { position: relative; flex: 1; min-height: 0; display: flex; gap: 20px; align-items: stretch; }
+  .caption { font-size: 12px; color: var(--muted); opacity: 0.85; }
+
+  /* Winners list (side panel) */
+  .side { width: 34%; min-width: 220px; display: flex; flex-direction: column; gap: 8px; overflow: auto; }
+  .side h3 { margin: 4px 0; font-size: 13px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted); }
+  .chip { display: flex; gap: 10px; align-items: center; padding: 8px 12px; border-radius: 12px;
+    background: var(--panel); border: 1px solid var(--panel-line); animation: pop .45s ease-out; }
+  .chip b { color: var(--gold); min-width: 22px; }
+  .chip span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  /* Wheel */
+  .wheel-area { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; min-width: 0; }
+  .wheel-box { position: relative; }
+  .pointer { position: absolute; left: 50%; top: -6px; transform: translateX(-50%); width: 0; height: 0;
+    border-left: 16px solid transparent; border-right: 16px solid transparent; border-top: 30px solid var(--gold);
+    filter: drop-shadow(0 3px 4px rgba(0,0,0,.5)); z-index: 2; }
+  .ticker { font-size: 20px; font-weight: 700; min-height: 28px; max-width: 100%; text-align: center;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  /* Race */
+  .race { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 4px; min-width: 0; }
+  .lane { display: grid; grid-template-columns: minmax(90px, 26%) 1fr; align-items: center; gap: 10px; }
+  .lane .label { font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #e2e8f0; }
+  .lane.won .label { color: var(--gold); font-weight: 800; }
+  .track { position: relative; height: 100%; border-radius: 10px; overflow: hidden; background: var(--track);
+    border: 1px solid var(--panel-line); }
+  .track::after { content: ""; position: absolute; right: 0; top: 0; bottom: 0; width: 12px;
+    background: repeating-conic-gradient(#fff 0% 25%, #111 0% 50%) 0 0 / 12px 12px; opacity: .9; }
+  .racer { position: absolute; top: 50%; left: 0; line-height: 0; will-change: transform; }
+  .racer svg { display: block; overflow: visible; }
+  .trail { position: absolute; right: 88%; top: 50%; height: 36%; transform: translateY(-50%); border-radius: 99px;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .55)); pointer-events: none; }
+  .theme-cars { --track: linear-gradient(90deg, rgba(255,255,255,.35) 0 50%, transparent 50%) 0 50% / 34px 2px repeat-x,
+    linear-gradient(180deg, #475569, #1e293b); }
+  .theme-rockets { --track: radial-gradient(circle at 20% 30%, rgba(255,255,255,.55) 0 1px, transparent 2px) 0 0 / 46px 23px,
+    radial-gradient(circle at 70% 70%, rgba(255,255,255,.35) 0 1px, transparent 2px) 0 0 / 61px 29px,
+    linear-gradient(180deg, #1e1b4b, #020617); }
+  .theme-planes { --track: radial-gradient(ellipse 22px 7px at 30% 40%, rgba(255,255,255,.35), transparent 70%) 0 0 / 120px 100%,
+    linear-gradient(180deg, #38bdf8, #0369a1); }
+
+  /* Shuffle */
+  .slot-area { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; min-width: 0; }
+  .slot { width: min(92%, 720px); padding: 26px 20px; border-radius: 18px; text-align: center; font-weight: 800;
+    font-size: clamp(26px, 5vw, 48px); background: rgba(0,0,0,.28); border: 2px solid var(--panel-line);
+    box-shadow: inset 0 0 40px rgba(0,0,0,.35); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .slot.final { border-color: var(--gold); color: var(--gold); animation: pop .5s ease-out; }
+
+  /* Results */
+  .results { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; overflow: auto; }
+  .results h2 { margin: 0; font-size: 15px; text-transform: uppercase; letter-spacing: 3px; color: var(--muted); }
+  .cards { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; width: 100%; }
+  .card { position: relative; padding: 16px 22px 14px; border-radius: 16px; text-align: center; min-width: 220px;
+    max-width: 100%; background: linear-gradient(160deg, rgba(251,191,36,.20), rgba(139,92,246,.18));
+    border: 1px solid rgba(251,191,36,.55); box-shadow: 0 10px 30px rgba(0,0,0,.35); animation: rise .6s ease-out both; }
+  .card .pos { font-size: 12px; letter-spacing: 2px; text-transform: uppercase; color: var(--gold); }
+  .card .name { font-weight: 800; line-height: 1.15; word-break: break-word; }
+  .card .detail { margin-top: 4px; font-size: 13px; color: var(--muted); }
+  .size-1 .card { min-width: 60%; padding: 26px 30px; }
+  .size-1 .name { font-size: clamp(30px, 6vw, 56px); }
+  .size-2 .name { font-size: 34px; }
+  .size-3 .name { font-size: 24px; }
+  .size-4 .name { font-size: 18px; }
+  .size-4 .card { min-width: 180px; padding: 10px 14px; }
+
+  .overlay { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    background: rgba(2, 6, 23, .55); backdrop-filter: blur(2px); z-index: 5; animation: fade .25s ease-out; }
+  .overlay .card { min-width: 55%; }
+  .overlay .name { font-size: clamp(28px, 5.5vw, 52px); }
+
+  .idle-icon { font-size: 64px; animation: float 3s ease-in-out infinite; }
+  .idle-title { font-size: clamp(26px, 4.5vw, 42px); font-weight: 800; text-align: center; }
+  @keyframes float { 0%, 100% { transform: translateY(0) rotate(-6deg) } 50% { transform: translateY(-8px) rotate(6deg) } }
+
+  canvas.confetti { position: absolute; inset: 0; pointer-events: none; z-index: 10; }
+
+  @keyframes pop { 0% { transform: scale(.85); opacity: 0 } 60% { transform: scale(1.04); opacity: 1 } 100% { transform: scale(1) } }
+  @keyframes rise { from { transform: translateY(14px); opacity: 0 } to { transform: none; opacity: 1 } }
+  @keyframes fade { from { opacity: 0 } to { opacity: 1 } }
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+  <div class="top"><div class="prize" id="prize"></div><div class="status" id="status"></div></div>
+  <div class="main" id="main"></div>
+  <div class="caption" id="caption"></div>
+</div>
+<script>
+(() => {
+  const DATA = __PAYLOAD__;
+  const TAU = Math.PI * 2;
+  const COLORS = ["#fbbf24", "#f472b6", "#60a5fa", "#34d399", "#a78bfa", "#fb923c", "#22d3ee", "#f87171", "#a3e635", "#e879f9"];
+  // Racers are small inline SVG drawings (no emoji), tinted per lane. Only constants and numbers go into them.
+  const THEMES = {
+    cars: {
+      status: ["Engines on…", "Green light, go!", "Overtaking on the straight…", "Wheel to wheel!", "Final lap!"],
+      finish: "🏁 Checkered flag!",
+      ratio: 2.6,
+      svg: (color, number) => `<svg viewBox="0 0 66 26" xmlns="http://www.w3.org/2000/svg">
+        <rect x="1" y="8" width="8" height="3" rx="1" fill="${color}"/><rect x="4" y="10" width="2" height="6" fill="#0f172a"/>
+        <path d="M5 18 L9 13 L25 12 L32 6 L45 6 L51 12 L61 14 Q65 15 64 19 L62 20 L5 20 Z" fill="${color}"/>
+        <path d="M34 7.5 L43.5 7.5 L47.5 12 L30.5 12 Z" fill="#0f172a" opacity=".78"/>
+        <path d="M9 17 L60 17" stroke="#ffffff" stroke-opacity=".45" stroke-width="1.2"/>
+        <circle cx="23" cy="15.5" r="4" fill="#ffffff"/>
+        <text x="23" y="17.6" font-size="5.6" font-weight="800" text-anchor="middle" fill="#0f172a"
+          font-family="system-ui, sans-serif">${number}</text>
+        <g class="wheel"><circle cx="16" cy="20" r="5.2" fill="#0f172a"/><circle cx="16" cy="20" r="2.2" fill="#94a3b8"/>
+          <rect x="15.4" y="15.4" width="1.2" height="9.2" fill="#475569"/></g>
+        <g class="wheel"><circle cx="52" cy="20" r="5.2" fill="#0f172a"/><circle cx="52" cy="20" r="2.2" fill="#94a3b8"/>
+          <rect x="51.4" y="15.4" width="1.2" height="9.2" fill="#475569"/></g>
+      </svg>`,
+    },
+    rockets: {
+      status: ["T-minus 3…", "Liftoff!", "Leaving orbit…", "Neck and neck!", "Final approach!"],
+      finish: "🏁 Mission complete!",
+      ratio: 2.6,
+      svg: (color) => `<svg viewBox="0 0 66 26" xmlns="http://www.w3.org/2000/svg">
+        <path class="flame" d="M17 9 Q1 13 17 17 Q10 13 17 9 Z" fill="#fbbf24"/>
+        <path class="flame" d="M17 10.5 Q7 13 17 15.5 Q12.5 13 17 10.5 Z" fill="#fff7ed"/>
+        <path d="M22 8 L13 2 L17 11 Z" fill="${color}"/><path d="M22 18 L13 24 L17 15 Z" fill="${color}"/>
+        <path d="M16 13 Q24 4 46 6.5 Q58 8.5 64 13 Q58 17.5 46 19.5 Q24 22 16 13 Z" fill="#e2e8f0"/>
+        <path d="M46 6.5 Q58 8.5 64 13 Q58 17.5 46 19.5 Q49 13 46 6.5 Z" fill="${color}"/>
+        <circle cx="37" cy="13" r="3.4" fill="#0ea5e9" stroke="${color}" stroke-width="1.6"/>
+        <path d="M22 13 L30 13" stroke="${color}" stroke-width="1.4" stroke-linecap="round"/>
+      </svg>`,
+    },
+    planes: {
+      status: ["Folding the planes…", "Launch!", "Catching the breeze…", "Neck and neck!", "Final glide!"],
+      finish: "🏁 Smooth landing!",
+      ratio: 2.4,
+      svg: (color) => `<svg viewBox="0 0 62 26" xmlns="http://www.w3.org/2000/svg">
+        <path d="M2 3 L60 13 L2 23 L15 13 Z" fill="#f8fafc"/>
+        <path d="M15 13 L60 13 L2 23 Z" fill="#cbd5e1"/>
+        <path d="M15 13 L60 13 L21 17.5 Z" fill="${color}" opacity=".9"/>
+        <path d="M2 3 L60 13" stroke="#94a3b8" stroke-width=".6"/>
+      </svg>`,
+    },
+  };
+
+  const stage = document.getElementById("stage");
+  const main = document.getElementById("main");
+  const statusEl = document.getElementById("status");
+  document.getElementById("prize").textContent = DATA.title;
+  document.getElementById("caption").textContent = DATA.caption || "";
+
+  const reducedMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const animate = DATA.animate && !reducedMotion;
+
+  function prng(seed) {
+    let a = seed >>> 0;
+    return () => {
+      a |= 0; a = (a + 0x6D2B79F5) | 0;
+      let t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  const rand = prng(DATA.seed);
+  const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+  const frame = () => new Promise((resolve) => requestAnimationFrame(resolve));
+
+  function el(tag, className, text) {
+    const node = document.createElement(tag);
+    if (className) node.className = className;
+    if (text !== undefined && text !== null) node.textContent = String(text);
+    return node;
+  }
+  function shuffle(list) {
+    const copy = list.slice();
+    for (let i = copy.length - 1; i > 0; i--) {
+      const j = Math.floor(rand() * (i + 1));
+      [copy[i], copy[j]] = [copy[j], copy[i]];
+    }
+    return copy;
+  }
+  function ordinal(position) {
+    return DATA.winners.length > 1 ? `Winner #${position}` : "Winner";
+  }
+
+  // ---------- confetti ----------
+  function confetti(duration = 2800) {
+    if (reducedMotion) return;
+    const canvas = el("canvas", "confetti");
+    stage.appendChild(canvas);
+    const ctx = canvas.getContext("2d");
+    const dpr = window.devicePixelRatio || 1;
+    const w = stage.clientWidth, h = stage.clientHeight;
+    canvas.width = w * dpr; canvas.height = h * dpr; ctx.scale(dpr, dpr);
+    const pieces = Array.from({ length: 180 }, () => ({
+      x: w / 2 + (rand() - 0.5) * w * 0.4, y: h * 0.35,
+      vx: (rand() - 0.5) * 13, vy: -rand() * 13 - 4,
+      size: 5 + rand() * 7, rot: rand() * TAU, vr: (rand() - 0.5) * 0.3,
+      color: COLORS[Math.floor(rand() * COLORS.length)],
+    }));
+    const start = performance.now();
+    (function tick(now) {
+      const t = now - start;
+      ctx.clearRect(0, 0, w, h);
+      ctx.globalAlpha = Math.max(0, 1 - Math.max(0, t - duration * 0.6) / (duration * 0.4));
+      for (const p of pieces) {
+        p.vy += 0.32; p.vx *= 0.99; p.x += p.vx; p.y += p.vy; p.rot += p.vr;
+        ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rot);
+        ctx.fillStyle = p.color; ctx.fillRect(-p.size / 2, -p.size / 4, p.size, p.size / 2);
+        ctx.restore();
+      }
+      if (t < duration) requestAnimationFrame(tick); else canvas.remove();
+    })(start);
+  }
+
+  // ---------- shared views ----------
+  function winnerCard(winner, position) {
+    const card = el("div", "card");
+    if (DATA.winners.length > 1) card.appendChild(el("div", "pos", ordinal(position)));
+    card.appendChild(el("div", "name", winner.name));
+    if (winner.detail) card.appendChild(el("div", "detail", winner.detail));
+    return card;
+  }
+
+  async function spotlight(winner, position, ms = 2300) {
+    const overlay = el("div", "overlay");
+    overlay.appendChild(winnerCard(winner, position));
+    stage.appendChild(overlay);
+    confetti();
+    await sleep(ms);
+    overlay.remove();
+  }
+
+  function sidePanel() {
+    const side = el("div", "side");
+    side.appendChild(el("h3", null, DATA.winners.length > 1 ? "Winners" : "Winner"));
+    return side;
+  }
+  function addChip(side, winner, position) {
+    const chip = el("div", "chip");
+    chip.appendChild(el("b", null, `#${position}`));
+    chip.appendChild(el("span", null, winner.name));
+    side.appendChild(chip);
+  }
+
+  function showResults(celebrate) {
+    main.replaceChildren();
+    const count = DATA.winners.length;
+    const size = count === 1 ? 1 : count <= 3 ? 2 : count <= 8 ? 3 : 4;
+    const results = el("div", `results size-${size}`);
+    results.appendChild(el("h2", null, count > 1 ? "🏆 Winners" : "🏆 And the winner is"));
+    const cards = el("div", "cards");
+    DATA.winners.forEach((winner, i) => {
+      const card = winnerCard(winner, i + 1);
+      card.style.animationDelay = `${Math.min(i, 12) * 80}ms`;
+      cards.appendChild(card);
+    });
+    results.appendChild(cards);
+    main.appendChild(results);
+    statusEl.textContent = DATA.done;
+    if (celebrate) confetti(3200);
+  }
+
+  // ---------- wheel ----------
+  // Every name on stage has an id (its position in DATA.names); winners point to it with `slot`,
+  // so namesakes never get mixed up.
+  const items = DATA.names.map((name, id) => ({ name, id }));
+
+  async function runWheel() {
+    const slices = items.slice();
+    const area = el("div", "wheel-area");
+    const box = el("div", "wheel-box");
+    const canvas = el("canvas");
+    const ticker = el("div", "ticker", " ");
+    box.appendChild(el("div", "pointer"));
+    box.appendChild(canvas);
+    area.appendChild(box);
+    area.appendChild(ticker);
+    const side = sidePanel();
+    main.replaceChildren(area, side);
+
+    const size = Math.max(200, Math.min(area.clientHeight - 48, area.clientWidth - 10, 440));
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = size * dpr; canvas.height = size * dpr;
+    canvas.style.width = `${size}px`; canvas.style.height = `${size}px`;
+    const ctx = canvas.getContext("2d");
+    ctx.scale(dpr, dpr);
+    let rotation = rand() * TAU;
+
+    function draw() {
+      const r = size / 2, n = slices.length, slice = TAU / n;
+      ctx.clearRect(0, 0, size, size);
+      ctx.save();
+      ctx.translate(r, r);
+      ctx.rotate(rotation);
+      for (let i = 0; i < n; i++) {
+        ctx.beginPath(); ctx.moveTo(0, 0); ctx.arc(0, 0, r - 4, i * slice, (i + 1) * slice); ctx.closePath();
+        let color = COLORS[i % COLORS.length];
+        if (i === n - 1 && n % COLORS.length === 1 && n > 1) color = COLORS[1];
+        ctx.fillStyle = color; ctx.fill();
+        ctx.strokeStyle = "rgba(11,16,38,.35)"; ctx.lineWidth = n > 90 ? 0.5 : 1.2; ctx.stroke();
+        if (n <= 48) {
+          ctx.save();
+          ctx.rotate(i * slice + slice / 2);
+          ctx.fillStyle = "#0b1026";
+          const fontSize = Math.max(9, Math.min(16, slice * r * 0.55));
+          ctx.font = `700 ${fontSize}px system-ui, sans-serif`;
+          ctx.textAlign = "right"; ctx.textBaseline = "middle";
+          const maxChars = Math.max(6, Math.floor((r * 0.72) / (fontSize * 0.55)));
+          const name = slices[i].name;
+          const label = name.length > maxChars ? name.slice(0, maxChars - 1) + "…" : name;
+          ctx.fillText(label, r - 14, 0);
+          ctx.restore();
+        }
+      }
+      ctx.restore();
+      ctx.beginPath(); ctx.arc(r, r, r * 0.11, 0, TAU);
+      ctx.fillStyle = "#0b1026"; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = "#fbbf24"; ctx.stroke();
+    }
+    function underPointer() {
+      const slice = TAU / slices.length;
+      const angle = (((-Math.PI / 2 - rotation) % TAU) + TAU) % TAU;
+      return slices[Math.floor(angle / slice) % slices.length].name;
+    }
+
+    draw();
+    for (let w = 0; w < DATA.winners.length; w++) {
+      const winner = DATA.winners[w];
+      const index = Math.max(0, slices.findIndex((item) => item.id === winner.slot));
+      const slice = TAU / slices.length;
+      const target = -Math.PI / 2 - (index + 0.2 + rand() * 0.6) * slice;
+      const delta = (((target - rotation) % TAU) + TAU) % TAU;
+      const from = rotation, to = rotation + TAU * (5 + Math.floor(rand() * 3)) + delta;
+      const duration = 5200 + rand() * 900;
+      statusEl.textContent = DATA.winners.length > 1 ? `Spinning for winner #${w + 1}…` : "Spinning…";
+      const start = performance.now();
+      for (;;) {
+        const now = await frame();
+        const t = Math.min(1, (now - start) / duration);
+        rotation = from + (to - from) * (1 - Math.pow(1 - t, 4));
+        draw();
+        ticker.textContent = underPointer();
+        if (t >= 1) break;
+      }
+      ticker.textContent = winner.name;
+      await spotlight(winner, w + 1);
+      addChip(side, winner, w + 1);
+      if (slices.length > 1) {
+        slices.splice(index, 1);
+        draw();
+      }
+    }
+    await sleep(400);
+    showResults(false);
+  }
+
+  // ---------- race ----------
+  async function runRace() {
+    const themeName = THEMES[DATA.theme] ? DATA.theme : "cars";
+    const theme = THEMES[themeName];
+    const racers = shuffle(items).map((item) => ({
+      name: item.name,
+      rank: DATA.winners.findIndex((winner) => winner.slot === item.id),
+    }));
+    const k = DATA.winners.length;
+    const race = el("div", `race theme-${themeName}`);
+    main.replaceChildren(race);
+
+    const laneHeight = Math.max(22, Math.min(52, (main.clientHeight - racers.length * 4) / racers.length));
+    const racerHeight = Math.max(14, Math.min(30, laneHeight * 0.64));
+    const racerWidth = racerHeight * theme.ratio;
+    const T = 7600, CHECKPOINTS = 8, GAP = 600;
+
+    racers.forEach((racer, index) => {
+      const lane = el("div", "lane");
+      lane.style.height = `${laneHeight}px`;
+      lane.appendChild(el("div", "label", racer.name));
+      const track = el("div", "track");
+      const body = el("div", "racer");
+      body.style.width = `${racerWidth}px`;
+      body.innerHTML = theme.svg(COLORS[index % COLORS.length], index + 1);
+      const trail = el("div", "trail");
+      body.appendChild(trail);
+      track.appendChild(body);
+      lane.appendChild(track);
+      race.appendChild(lane);
+      Object.assign(racer, {
+        lane, track, body, trail, phase: rand() * TAU, previous: 0,
+        wheels: body.querySelectorAll(".wheel"), flames: body.querySelectorAll(".flame"),
+      });
+
+      const final = racer.rank >= 0 ? 1 - 0.03 * racer.rank : (1 - 0.03 * k) - (0.04 + rand() * 0.2);
+      const points = [0];
+      for (let j = 1; j < CHECKPOINTS; j++) {
+        const noise = (rand() - 0.5) * 0.22 * Math.sin((Math.PI * j) / CHECKPOINTS);
+        const capped = Math.min(final * (j / CHECKPOINTS) + noise, final - 0.012 * (CHECKPOINTS - j));
+        points.push(Math.max(points[j - 1] + 0.004, capped));
+      }
+      points.push(final);
+      racer.points = points;
+    });
+
+    function progress(racer, t) {
+      if (t < T) {
+        const x = (t / T) * CHECKPOINTS, j = Math.floor(x), f = x - j;
+        const s = (1 - Math.cos(Math.PI * f)) / 2;
+        return racer.points[j] + (racer.points[j + 1] - racer.points[j]) * s;
+      }
+      const last = racer.points[CHECKPOINTS];
+      if (racer.rank < 0) return Math.min(last + ((t - T) / 1000) * 0.012, 0.97 - 0.03 * k);
+      if (racer.rank === 0) return 1;
+      return last + (1 - last) * Math.min(1, (t - T) / (GAP * racer.rank));
+    }
+
+    const end = T + GAP * Math.max(0, k - 1) + 700;
+    const start = performance.now();
+    const finished = new Set();
+    for (;;) {
+      const now = await frame();
+      const t = now - start;
+      const phaseIndex = Math.min(theme.status.length - 1, Math.floor((t / T) * theme.status.length));
+      statusEl.textContent = t < T ? theme.status[phaseIndex] : theme.finish;
+      for (const racer of racers) {
+        const width = racer.track.clientWidth - racerWidth - 16;
+        const p = Math.min(1, progress(racer, Math.min(t, end)));
+        const seconds = Math.max(0.001, (t - (racer.previousT ?? t - 16)) / 1000);
+        const speed = Math.max(0, p - racer.previous) / seconds;  // share of the track per second
+        racer.previous = p;
+        racer.previousT = t;
+        let wobble = 0, tilt = 0;
+        if (themeName === "cars") {
+          wobble = Math.sin(t / 45 + racer.phase) * 0.6;
+          racer.wheels.forEach((wheel) => {
+            const [cx, cy] = wheel === racer.wheels[0] ? [16, 20] : [52, 20];
+            wheel.setAttribute("transform", `rotate(${(p * 5400) % 360} ${cx} ${cy})`);
+          });
+        } else if (themeName === "rockets") {
+          wobble = Math.sin(t / 90 + racer.phase) * 1.2;
+          const flicker = 0.75 + 0.25 * Math.sin(t / 30 + racer.phase * 3);
+          racer.flames.forEach((flame) => flame.setAttribute("transform", `translate(17 13) scale(${flicker} 1) translate(-17 -13)`));
+        } else {
+          wobble = Math.sin(t / 220 + racer.phase) * 3;
+          tilt = Math.sin(t / 220 + racer.phase + 1) * 4;
+        }
+        racer.trail.style.width = `${Math.min(racerWidth * 1.2, speed * racerWidth * 5)}px`;
+        racer.trail.style.opacity = String(Math.min(0.85, speed * 5));
+        racer.body.style.transform =
+          `translate(${Math.max(0, p * width)}px, calc(-50% + ${wobble}px)) rotate(${tilt}deg)`;
+        if (racer.rank >= 0 && p >= 1 && !finished.has(racer)) {
+          finished.add(racer);
+          racer.lane.classList.add("won");
+          const medal = ["🥇", "🥈", "🥉"][racer.rank] || `#${racer.rank + 1}`;
+          racer.lane.querySelector(".label").textContent = `${medal} ${racer.name}`;
+        }
+      }
+      if (t >= end) break;
+    }
+    confetti();
+    await sleep(2200);
+    showResults(false);
+  }
+
+  // ---------- shuffle ----------
+  async function runShuffle() {
+    const area = el("div", "slot-area");
+    const slot = el("div", "slot", "…");
+    area.appendChild(slot);
+    const side = sidePanel();
+    main.replaceChildren(area, side);
+    const pool = DATA.names.length ? DATA.names : DATA.winners.map((w) => w.name);
+
+    for (let w = 0; w < DATA.winners.length; w++) {
+      const winner = DATA.winners[w];
+      statusEl.textContent = DATA.winners.length > 1 ? `Shuffling for winner #${w + 1}…` : "Shuffling…";
+      slot.classList.remove("final");
+      const duration = 3400, start = performance.now();
+      let previous = "";
+      for (;;) {
+        const elapsed = performance.now() - start;
+        if (elapsed >= duration) break;
+        let name = pool[Math.floor(rand() * pool.length)];
+        if (pool.length > 1 && name === previous) name = pool[(pool.indexOf(name) + 1) % pool.length];
+        slot.textContent = previous = name;
+        await sleep(45 + 360 * Math.pow(elapsed / duration, 2.6));
+      }
+      slot.textContent = winner.name;
+      slot.classList.add("final");
+      await sleep(500);
+      await spotlight(winner, w + 1, 2000);
+      addChip(side, winner, w + 1);
+    }
+    await sleep(300);
+    showResults(false);
+  }
+
+  function showIdle() {
+    const results = el("div", "results size-2");
+    results.appendChild(el("div", "idle-icon", "🎟️"));
+    results.appendChild(el("div", "idle-title", DATA.idleTitle));
+    results.appendChild(el("h2", null, DATA.idleSubtitle));
+    main.replaceChildren(results);
+    statusEl.textContent = DATA.done;
+  }
+
+  async function run() {
+    if (DATA.mode === "idle") {
+      showIdle();
+      return;
+    }
+    if (!animate || DATA.mode === "reveal") {
+      showResults(animate);
+      return;
+    }
+    if (DATA.mode === "wheel") await runWheel();
+    else if (DATA.mode === "race") await runRace();
+    else await runShuffle();
+  }
+
+  run().catch(() => showResults(false));
+})();
+</script>
+</body>
+</html>

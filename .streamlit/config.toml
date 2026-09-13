@@ -1,0 +1,15 @@
+# Accent color per theme; the app still follows the viewer's light/dark setting.
+[theme.light]
+primaryColor = "#7C3AED"
+
+[theme.dark]
+primaryColor = "#A78BFA"
+
+[server]
+maxUploadSize = 50
+
+[browser]
+gatherUsageStats = false
+
+[client]
+toolbarMode = "minimal"

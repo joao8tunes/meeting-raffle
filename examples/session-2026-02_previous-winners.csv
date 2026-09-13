@@ -1,0 +1,5 @@
+﻿Round,Prize,Position,Winner,Email,No-show,Drawn at,Draw ID
+1,Conference ticket,1,Harper Orbit,harper.orbit@example.com,False,2026-02-17 18:05:00 UTC,SAMPLE01
+1,Conference ticket,2,Quinn Nova,quinn.nova@example.com,False,2026-02-17 18:05:00 UTC,SAMPLE01
+2,Coffee voucher,1,Cameron Birch,cameron.birch@example.com,True,2026-02-17 18:05:00 UTC,SAMPLE02
+2,Coffee voucher,2,Harper Orbit,harper.orbit@example.com,False,2026-02-17 18:05:00 UTC,SAMPLE02

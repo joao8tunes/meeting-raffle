@@ -1,0 +1,5 @@
+* text=auto
+*.png binary
+*.xlsx binary
+# Sample exports must stay byte-for-byte (UTF-16, CRLF) like the real files they imitate.
+examples/* -text
