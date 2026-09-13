@@ -6,6 +6,8 @@ exports, spreadsheets or just paste a list of names. Set a few rules, reveal the
 wheel, a race or a name shuffle, and measure how your event series is doing: audience, retention,
 loyalty, engagement and prizes.
 
+**Demo here:** https://meeting-raffle.streamlit.app/
+
 ![A race revealing the winners](docs/screenshots/race.png)
 
 ## Highlights
