@@ -2,9 +2,9 @@
 
 Fair, fun and auditable prize draws, plus attendance insights, for meetings and events. Upload the
 attendance reports of your Microsoft Teams meetings (any language or version), Zoom/Google Meet/Webex
-exports, spreadsheets or just paste a list of names. Set a few rules, reveal the winners with a spinning
-wheel, a race or a name shuffle, and measure how your event series is doing: audience, retention,
-loyalty, engagement and prizes.
+exports, spreadsheets or just paste a list of names. Set a few rules, reveal the winners with a show made
+for large audiences (wheel, race, spotlight, last one standing, lottery or name shuffle), and measure how
+your event series is doing: audience, retention, loyalty, engagement and prizes.
 
 **Demo here:** https://meeting-raffle.streamlit.app/
 
@@ -20,8 +20,9 @@ loyalty, engagement and prizes.
 - **Clear eligibility rules.** Minimum minutes, staying until the end, a time window, a minimum number
   of meetings, and exclusions by role, by person or by a list (such as past winners). Every person shows
   why they are or aren't eligible.
-- **A show for the audience.** 🎡 Wheel, 🏁 race (race cars, rockets or paper planes), 🎰 name
-  shuffle, or ⚡ instant reveal, with confetti.
+- **A show for the whole audience.** 🎡 Wheel, 🏁 race (cars, rockets, paper planes, sailboats, bikes,
+  balloons or trains), 🔦 spotlight, 🏆 last one standing, 🎟️ lottery, 🎰 name shuffle or ⚡ instant
+  reveal. Everyone in the draw appears in the show, up to 2,000 people on screen.
 - **Fair and auditable.** Winners are picked with a cryptographically secure seed before any animation
   starts. Each round's seed and eligible pool are exported so anyone can reproduce the result.
 - **Insights across events.** Audience per event, new vs. returning people, retention over time, minutes
@@ -32,6 +33,12 @@ loyalty, engagement and prizes.
   emails stay hidden on screen unless you turn them on.
 
 ## Screenshots
+
+| Race with a live leaderboard | Spotlight |
+| --- | --- |
+| ![Race with every participant and a live leaderboard](docs/screenshots/show-race.png) | ![Spotlight searching a grid with every participant](docs/screenshots/show-spotlight.png) |
+| **Last one standing** | **Lottery** |
+| ![Last one standing, eliminating people until the winner remains](docs/screenshots/show-last-standing.png) | ![Lottery reels revealing the winning ticket](docs/screenshots/show-lottery.png) |
 
 | Wheel | Winners |
 | --- | --- |
@@ -77,8 +84,8 @@ own files.
 1. **Load participants** in the sidebar: upload one or more files, or paste names (one per line).
 2. **Decide who can win** with the rules below. The *People* tab shows every person, their minutes and
    the reason when they are not eligible.
-3. **Draw**: type the prize, choose how many winners and the show, then press **Draw**. Repeat for each
-   prize. Past winners are left out of the next rounds unless you allow repeats.
+3. **Draw**: type the prize, choose how many winners and the [show](#shows), then press **Draw**. Repeat
+   for each prize. Past winners are left out of the next rounds unless you allow repeats.
 4. **Wrap up** in the *Winners* tab: mark no-shows (they leave the draw so you can pick a replacement),
    undo a round, and download the results as CSV or Excel.
 5. **Measure** in the *Insights* tab: compare events, see who keeps coming back and download the report.
@@ -124,6 +131,26 @@ typos, but never merges different emails.
 
 **Classic Teams lists** don't record when the meeting ended. People still connected are counted until
 the last recorded activity, or until the end of the time window when one is set.
+
+## Shows
+
+Pick how the winners are revealed. The winners are already decided when the show starts; every show just
+plays back the same result, so the choice never changes anyone's chances.
+
+| Show | What the audience sees | Best for |
+| --- | --- | --- |
+| 🎡 Wheel | Everyone gets a slice; the name under the pointer is shown as the wheel spins | up to a few hundred people |
+| 🏁 Race | Up to 12 people race in labelled lanes; bigger fields race together with a live leaderboard and name tags on the leaders. Racers: cars, rockets, paper planes, sailboats, bikes, balloons or trains | any size |
+| 🔦 Spotlight | Everyone is a tile; a spotlight searches the room and stops on the winner | large audiences |
+| 🏆 Last standing | Everyone starts on screen; waves knock people out until only the winners remain, names growing as the field shrinks | large audiences |
+| 🎟️ Lottery | Everyone holds a ticket number (alphabetical order); reels reveal the winning number digit by digit, narrowing down the candidates | any size |
+| 🎰 Shuffle | Names flash on a big display until one stops | small groups |
+| ⚡ Instant | The winners appear right away | many winners at once |
+
+**Large audiences.** Everyone in the draw appears on screen up to 2,000 people (the lottery has no limit).
+Above that, the show uses a random sample that always includes the winners and says so on screen. Shows
+render on a canvas and were checked at 60 frames per second with 2,000 participants. Rounds with many
+winners switch to an instant reveal (for example, more than 5 winners on the wheel).
 
 ## Insights and reports
 
