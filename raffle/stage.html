@@ -31,17 +31,19 @@
   .status { font-size: 14px; color: var(--muted); white-space: nowrap; }
   .main { position: relative; flex: 1; min-height: 0; display: flex; gap: 20px; align-items: stretch; }
   .caption { font-size: 12px; color: var(--muted); opacity: 0.85; }
+  .subtle { font-size: 12px; color: var(--muted); }
+  canvas { display: block; }
 
   /* Winners list (side panel) */
-  .side { width: 34%; min-width: 220px; display: flex; flex-direction: column; gap: 8px; overflow: auto; }
-  .side h3 { margin: 4px 0; font-size: 13px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted); }
+  .side { width: 30%; min-width: 200px; display: flex; flex-direction: column; gap: 8px; overflow: auto; }
+  .side h3, .board h3 { margin: 4px 0; font-size: 13px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted); }
   .chip { display: flex; gap: 10px; align-items: center; padding: 8px 12px; border-radius: 12px;
     background: var(--panel); border: 1px solid var(--panel-line); animation: pop .45s ease-out; }
   .chip b { color: var(--gold); min-width: 22px; }
   .chip span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
   /* Wheel */
-  .wheel-area { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; min-width: 0; }
+  .wheel-area { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; min-width: 0; }
   .wheel-box { position: relative; }
   .pointer { position: absolute; left: 50%; top: -6px; transform: translateX(-50%); width: 0; height: 0;
     border-left: 16px solid transparent; border-right: 16px solid transparent; border-top: 30px solid var(--gold);
@@ -49,14 +51,14 @@
   .ticker { font-size: 20px; font-weight: 700; min-height: 28px; max-width: 100%; text-align: center;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-  /* Race */
+  /* Race: lanes (small fields) */
   .race { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 4px; min-width: 0; }
   .lane { display: grid; grid-template-columns: minmax(90px, 26%) 1fr; align-items: center; gap: 10px; }
   .lane .label { font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #e2e8f0; }
   .lane.won .label { color: var(--gold); font-weight: 800; }
   .track { position: relative; height: 100%; border-radius: 10px; overflow: hidden; background: var(--track);
     border: 1px solid var(--panel-line); }
-  .track::after { content: ""; position: absolute; right: 0; top: 0; bottom: 0; width: 12px;
+  .track::after, .field-track::after { content: ""; position: absolute; right: 0; top: 0; bottom: 0; width: 12px;
     background: repeating-conic-gradient(#fff 0% 25%, #111 0% 50%) 0 0 / 12px 12px; opacity: .9; }
   .racer { position: absolute; top: 50%; left: 0; line-height: 0; will-change: transform; }
   .racer svg { display: block; overflow: visible; }
@@ -64,11 +66,73 @@
     background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .55)); pointer-events: none; }
   .theme-cars { --track: linear-gradient(90deg, rgba(255,255,255,.35) 0 50%, transparent 50%) 0 50% / 34px 2px repeat-x,
     linear-gradient(180deg, #475569, #1e293b); }
-  .theme-rockets { --track: radial-gradient(circle at 20% 30%, rgba(255,255,255,.55) 0 1px, transparent 2px) 0 0 / 46px 23px,
+  .theme-rockets, .field-rockets { --track: radial-gradient(circle at 20% 30%, rgba(255,255,255,.55) 0 1px, transparent 2px) 0 0 / 46px 23px,
     radial-gradient(circle at 70% 70%, rgba(255,255,255,.35) 0 1px, transparent 2px) 0 0 / 61px 29px,
     linear-gradient(180deg, #1e1b4b, #020617); }
-  .theme-planes { --track: radial-gradient(ellipse 22px 7px at 30% 40%, rgba(255,255,255,.35), transparent 70%) 0 0 / 120px 100%,
+  .theme-planes, .field-planes { --track: radial-gradient(ellipse 22px 7px at 30% 40%, rgba(255,255,255,.35), transparent 70%) 0 0 / 120px 100%,
     linear-gradient(180deg, #38bdf8, #0369a1); }
+  .theme-boats { --track: linear-gradient(90deg, rgba(255,255,255,.22) 0 40%, transparent 40%) 0 78% / 30px 2px repeat-x,
+    linear-gradient(90deg, rgba(255,255,255,.12) 0 40%, transparent 40%) 15px 38% / 30px 2px repeat-x,
+    linear-gradient(180deg, #0284c7, #075985); }
+  .theme-bikes { --track: linear-gradient(90deg, rgba(255,255,255,.4) 0 45%, transparent 45%) 0 50% / 22px 2px repeat-x,
+    linear-gradient(180deg, #4d7c0f 0 12%, #57534e 12% 88%, #4d7c0f 88%); }
+  .theme-balloons, .field-balloons { --track: radial-gradient(ellipse 26px 9px at 30% 35%, rgba(255,255,255,.75), transparent 70%) 0 0 / 150px 100%,
+    radial-gradient(ellipse 18px 6px at 72% 72%, rgba(255,255,255,.5), transparent 70%) 0 0 / 95px 100%,
+    linear-gradient(180deg, #7dd3fc, #38bdf8); }
+  .theme-trains { --track: repeating-linear-gradient(90deg, rgba(120,53,15,.9) 0 3px, transparent 3px 12px) 0 76% / 100% 18% no-repeat,
+    linear-gradient(180deg, transparent 0 74%, #cbd5e1 74% 77%, transparent 77% 89%, #cbd5e1 89% 92%, transparent 92%),
+    linear-gradient(180deg, #44403c, #1c1917); }
+
+  /* Race: big fields */
+  .field { flex: 1; display: flex; gap: 14px; min-width: 0; }
+  .field-track { position: relative; flex: 1; min-width: 0; border-radius: 12px; overflow: hidden;
+    border: 1px solid var(--panel-line); background: var(--track); }
+  .field-track canvas, .tiles-box canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .field-cars { --track: repeating-linear-gradient(180deg, transparent 0 34px, rgba(255,255,255,.12) 34px 36px),
+    linear-gradient(180deg, #475569, #1e293b); }
+  .field-boats { --track: repeating-linear-gradient(180deg, transparent 0 26px, rgba(255,255,255,.12) 26px 28px),
+    linear-gradient(180deg, #0284c7, #075985); }
+  .field-bikes { --track: repeating-linear-gradient(180deg, transparent 0 30px, rgba(255,255,255,.1) 30px 32px),
+    linear-gradient(180deg, #57534e, #3f3a36); }
+  .field-trains { --track: repeating-linear-gradient(180deg, transparent 0 20px, rgba(203,213,225,.28) 20px 22px),
+    linear-gradient(180deg, #44403c, #1c1917); }
+  .board { width: 26%; min-width: 190px; display: flex; flex-direction: column; gap: 6px; min-height: 0; }
+  .board-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; counter-reset: pos; }
+  .board-list li { display: flex; align-items: center; gap: 8px; padding: 5px 10px; border-radius: 10px;
+    background: var(--panel); border: 1px solid transparent; font-size: 13px; counter-increment: pos; min-height: 27px; }
+  .board-list li::before { content: counter(pos); color: var(--muted); min-width: 16px; font-weight: 700; }
+  .board-list li.won { border-color: rgba(251,191,36,.6); color: var(--gold); font-weight: 700; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; flex: none; }
+  .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  /* Tiles (spotlight, last standing) */
+  .tiles-area { flex: 1; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+  .tiles-box { position: relative; flex: 1; min-height: 0; min-width: 0; }
+
+  /* Lottery */
+  .lottery { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; min-width: 0; }
+  .lot-label { text-transform: uppercase; letter-spacing: 3px; font-size: 13px; color: var(--gold); }
+  .ticket { position: relative; display: flex; flex-direction: column; align-items: center; gap: 12px;
+    padding: 18px 34px 20px; border-radius: 18px; border: 2px dashed rgba(251,191,36,.55);
+    background: linear-gradient(160deg, rgba(251,191,36,.16), rgba(139,92,246,.16)); }
+  .ticket::before, .ticket::after { content: ""; position: absolute; top: 50%; width: 26px; height: 26px; border-radius: 50%;
+    background: #15123a; border: 2px dashed rgba(251,191,36,.55); transform: translateY(-50%); }
+  .ticket::before { left: -14px; clip-path: inset(0 0 0 50%); }
+  .ticket::after { right: -14px; clip-path: inset(0 50% 0 0); }
+  .reels { display: flex; gap: 10px; }
+  .reel { width: clamp(46px, 7vw, 76px); height: clamp(64px, 10vw, 100px); border-radius: 14px; display: flex;
+    align-items: center; justify-content: center; font-size: clamp(34px, 6vw, 60px); font-weight: 800;
+    font-variant-numeric: tabular-nums; background: rgba(0,0,0,.35); border: 2px solid var(--panel-line);
+    box-shadow: inset 0 0 22px rgba(0,0,0,.45); }
+  .reel.set { border-color: var(--gold); color: var(--gold); animation: pop .35s ease-out; }
+  .hint { font-size: 16px; color: var(--muted); min-height: 22px; text-align: center; }
+  .cands { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; max-width: 94%; }
+  .cand { padding: 6px 12px; border-radius: 999px; background: var(--panel); border: 1px solid var(--panel-line);
+    font-size: 14px; transition: opacity .4s, transform .4s, background .4s; animation: rise .35s ease-out both;
+    max-width: 260px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .cand b { color: var(--gold); margin-right: 6px; font-variant-numeric: tabular-nums; }
+  .cand.out { opacity: .25; }
+  .cand.hit { border-color: var(--gold); background: rgba(251,191,36,.22); transform: scale(1.08); }
 
   /* Shuffle */
   .slot-area { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; min-width: 0; }
@@ -121,12 +185,18 @@
   const DATA = __PAYLOAD__;
   const TAU = Math.PI * 2;
   const COLORS = ["#fbbf24", "#f472b6", "#60a5fa", "#34d399", "#a78bfa", "#fb923c", "#22d3ee", "#f87171", "#a3e635", "#e879f9"];
-  // Racers are small inline SVG drawings (no emoji), tinted per lane. Only constants and numbers go into them.
+  const GOLD = "#fbbf24";
+  const LANES_MAX = 12;          // up to this many racers get their own labelled lane
+  const RACE_T = 7600, CHECKPOINTS = 8, FINISH_GAP = 600;
+
+  // Racers are small inline SVG drawings (no emoji), tinted per racer. Only constants, a color and a number go
+  // into them, never uploaded text. Groups with class "spin" rotate and "flame" flickers around data-cx/data-cy.
   const THEMES = {
     cars: {
       status: ["Engines on…", "Green light, go!", "Overtaking on the straight…", "Wheel to wheel!", "Final lap!"],
       finish: "🏁 Checkered flag!",
-      ratio: 2.6,
+      ratio: 66 / 26,
+      motion: (t, phase) => ({ dy: Math.sin(t / 45 + phase) * 0.5, rot: 0 }),
       svg: (color, number) => `<svg viewBox="0 0 66 26" xmlns="http://www.w3.org/2000/svg">
         <rect x="1" y="8" width="8" height="3" rx="1" fill="${color}"/><rect x="4" y="10" width="2" height="6" fill="#0f172a"/>
         <path d="M5 18 L9 13 L25 12 L32 6 L45 6 L51 12 L61 14 Q65 15 64 19 L62 20 L5 20 Z" fill="${color}"/>
@@ -135,19 +205,20 @@
         <circle cx="23" cy="15.5" r="4" fill="#ffffff"/>
         <text x="23" y="17.6" font-size="5.6" font-weight="800" text-anchor="middle" fill="#0f172a"
           font-family="system-ui, sans-serif">${number}</text>
-        <g class="wheel"><circle cx="16" cy="20" r="5.2" fill="#0f172a"/><circle cx="16" cy="20" r="2.2" fill="#94a3b8"/>
+        <g class="spin" data-cx="16" data-cy="20"><circle cx="16" cy="20" r="5.2" fill="#0f172a"/><circle cx="16" cy="20" r="2.2" fill="#94a3b8"/>
           <rect x="15.4" y="15.4" width="1.2" height="9.2" fill="#475569"/></g>
-        <g class="wheel"><circle cx="52" cy="20" r="5.2" fill="#0f172a"/><circle cx="52" cy="20" r="2.2" fill="#94a3b8"/>
+        <g class="spin" data-cx="52" data-cy="20"><circle cx="52" cy="20" r="5.2" fill="#0f172a"/><circle cx="52" cy="20" r="2.2" fill="#94a3b8"/>
           <rect x="51.4" y="15.4" width="1.2" height="9.2" fill="#475569"/></g>
       </svg>`,
     },
     rockets: {
       status: ["T-minus 3…", "Liftoff!", "Leaving orbit…", "Neck and neck!", "Final approach!"],
       finish: "🏁 Mission complete!",
-      ratio: 2.6,
+      ratio: 66 / 26,
+      motion: (t, phase) => ({ dy: Math.sin(t / 90 + phase) * 1.2, rot: 0 }),
       svg: (color) => `<svg viewBox="0 0 66 26" xmlns="http://www.w3.org/2000/svg">
-        <path class="flame" d="M17 9 Q1 13 17 17 Q10 13 17 9 Z" fill="#fbbf24"/>
-        <path class="flame" d="M17 10.5 Q7 13 17 15.5 Q12.5 13 17 10.5 Z" fill="#fff7ed"/>
+        <path class="flame" data-cx="17" data-cy="13" d="M17 9 Q1 13 17 17 Q10 13 17 9 Z" fill="#fbbf24"/>
+        <path class="flame" data-cx="17" data-cy="13" d="M17 10.5 Q7 13 17 15.5 Q12.5 13 17 10.5 Z" fill="#fff7ed"/>
         <path d="M22 8 L13 2 L17 11 Z" fill="${color}"/><path d="M22 18 L13 24 L17 15 Z" fill="${color}"/>
         <path d="M16 13 Q24 4 46 6.5 Q58 8.5 64 13 Q58 17.5 46 19.5 Q24 22 16 13 Z" fill="#e2e8f0"/>
         <path d="M46 6.5 Q58 8.5 64 13 Q58 17.5 46 19.5 Q49 13 46 6.5 Z" fill="${color}"/>
@@ -158,12 +229,85 @@
     planes: {
       status: ["Folding the planes…", "Launch!", "Catching the breeze…", "Neck and neck!", "Final glide!"],
       finish: "🏁 Smooth landing!",
-      ratio: 2.4,
+      ratio: 62 / 26,
+      motion: (t, phase) => ({ dy: Math.sin(t / 220 + phase) * 3, rot: Math.sin(t / 220 + phase + 1) * 4 }),
       svg: (color) => `<svg viewBox="0 0 62 26" xmlns="http://www.w3.org/2000/svg">
         <path d="M2 3 L60 13 L2 23 L15 13 Z" fill="#f8fafc"/>
         <path d="M15 13 L60 13 L2 23 Z" fill="#cbd5e1"/>
         <path d="M15 13 L60 13 L21 17.5 Z" fill="${color}" opacity=".9"/>
         <path d="M2 3 L60 13" stroke="#94a3b8" stroke-width=".6"/>
+      </svg>`,
+    },
+    boats: {
+      status: ["Raising the sails…", "And they're off!", "Riding the waves…", "Bow to bow!", "Final buoy!"],
+      finish: "🏁 Across the line!",
+      ratio: 60 / 32,
+      scale: 0.78,
+      motion: (t, phase) => ({ dy: Math.sin(t / 260 + phase) * 1.6, rot: Math.sin(t / 330 + phase) * 3 }),
+      svg: (color, number) => `<svg viewBox="0 0 60 32" xmlns="http://www.w3.org/2000/svg">
+        <path d="M27 2 L27 22" stroke="#e2e8f0" stroke-width="1.6" stroke-linecap="round"/>
+        <path d="M29 3 Q44 12 47 21 L29 21 Z" fill="#f8fafc"/>
+        <path d="M25 6 Q14 14 11 21 L25 21 Z" fill="${color}"/>
+        <path d="M27 2 L35 4 L27 6 Z" fill="${color}"/>
+        <path d="M3 22 L57 22 L49 31 L10 31 Q6 31 4 27 Z" fill="${color}"/>
+        <path d="M7 25.5 L53 25.5" stroke="#ffffff" stroke-opacity=".55" stroke-width="1.2"/>
+        <circle cx="20" cy="27.6" r="3.2" fill="#ffffff"/>
+        <text x="20" y="29.3" font-size="4.6" font-weight="800" text-anchor="middle" fill="#0f172a"
+          font-family="system-ui, sans-serif">${number}</text>
+      </svg>`,
+    },
+    bikes: {
+      status: ["Clipping in…", "And they're off!", "Pedalling hard…", "Wheel to wheel!", "Final sprint!"],
+      finish: "🏁 Photo finish!",
+      ratio: 58 / 36,
+      scale: 0.82,
+      motion: (t, phase) => ({ dy: Math.sin(t / 70 + phase) * 0.4, rot: 0 }),
+      svg: (color) => `<svg viewBox="0 0 58 36" xmlns="http://www.w3.org/2000/svg">
+        <g class="spin" data-cx="13" data-cy="27"><circle cx="13" cy="27" r="8" fill="none" stroke="#0f172a" stroke-width="2.4"/>
+          <path d="M13 19.5 V34.5 M5.5 27 H20.5 M7.7 21.7 L18.3 32.3 M18.3 21.7 L7.7 32.3" stroke="#cbd5e1" stroke-width=".7"/></g>
+        <g class="spin" data-cx="45" data-cy="27"><circle cx="45" cy="27" r="8" fill="none" stroke="#0f172a" stroke-width="2.4"/>
+          <path d="M45 19.5 V34.5 M37.5 27 H52.5 M39.7 21.7 L50.3 32.3 M50.3 21.7 L39.7 32.3" stroke="#cbd5e1" stroke-width=".7"/></g>
+        <path d="M13 27 L24 27 L37 16 L22 16 Z M24 27 L20 12 M37 16 L45 27 M35 11 L39 11 L37 16" fill="none"
+          stroke="#e2e8f0" stroke-width="2.3" stroke-linejoin="round" stroke-linecap="round"/>
+        <path d="M17 12 L23 12" stroke="#0f172a" stroke-width="2.2" stroke-linecap="round"/>
+        <path d="M21 11 L27 19 L24 27" fill="none" stroke="#1e293b" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M21 11 L33 6" stroke="${color}" stroke-width="4.4" stroke-linecap="round"/>
+        <path d="M32 7 L37 11" stroke="${color}" stroke-width="2.2" stroke-linecap="round"/>
+        <circle cx="36" cy="4.2" r="3.3" fill="#e2e8f0"/>
+        <path d="M32.5 3.8 Q36 -0.8 39.8 3.6 Z" fill="${color}"/>
+      </svg>`,
+    },
+    balloons: {
+      status: ["Firing the burners…", "Up, up and away!", "Riding the wind…", "Side by side!", "Final drift!"],
+      finish: "🏁 Touchdown!",
+      ratio: 36 / 46,
+      scale: 0.94,
+      trail: false,
+      motion: (t, phase) => ({ dy: Math.sin(t / 450 + phase) * 3.5, rot: Math.sin(t / 600 + phase) * 2 }),
+      svg: (color) => `<svg viewBox="0 0 36 46" xmlns="http://www.w3.org/2000/svg">
+        <path d="M18 1.5 C7 1.5 2 10 2 17 C2 25.5 10 30 13 34 L23 34 C26 30 34 25.5 34 17 C34 10 29 1.5 18 1.5 Z" fill="${color}"/>
+        <path d="M18 1.5 C11.5 6 10.5 21 13 34 M18 1.5 C24.5 6 25.5 21 23 34" fill="none" stroke="#ffffff" stroke-opacity=".6" stroke-width="2"/>
+        <path d="M2.4 16 H33.6" stroke="#0f172a" stroke-opacity=".18" stroke-width="2"/>
+        <path d="M13.5 34.5 L15 39 M22.5 34.5 L21 39" stroke="#e2e8f0" stroke-width=".9"/>
+        <path class="flame" data-cx="18" data-cy="37" d="M18 37 Q16.4 34.6 18 32.4 Q19.6 34.6 18 37 Z" fill="#fbbf24"/>
+        <rect x="14" y="39" width="8" height="6" rx="1.2" fill="#b45309"/>
+        <path d="M14 41.5 H22" stroke="#78350f" stroke-width=".8"/>
+      </svg>`,
+    },
+    trains: {
+      status: ["All aboard…", "Departing!", "Full speed ahead…", "Side by side!", "Final station!"],
+      finish: "🏁 Arrived on time!",
+      ratio: 84 / 22,
+      scale: 0.5,
+      motion: (t, phase) => ({ dy: Math.sin(t / 60 + phase) * 0.3, rot: 0 }),
+      svg: (color) => `<svg viewBox="0 0 84 22" xmlns="http://www.w3.org/2000/svg">
+        <path d="M2 5 Q2 2.5 4.5 2.5 L56 2.5 Q72 2.5 81 14.5 Q82.5 17.5 78 17.5 L4.5 17.5 Q2 17.5 2 15 Z" fill="#f1f5f9"/>
+        <path d="M2 11.5 H80" stroke="${color}" stroke-width="3.2"/>
+        <path d="M8 6.5 H50" stroke="#1e293b" stroke-width="3.4" stroke-dasharray="6 2.5"/>
+        <path d="M57 4.5 Q67 5 73.5 10 L57 10 Z" fill="#1e293b"/>
+        <circle cx="79" cy="14.6" r="1.1" fill="#fde68a"/>
+        <rect x="9" y="17.5" width="14" height="3" rx="1.5" fill="#334155"/>
+        <rect x="52" y="17.5" width="14" height="3" rx="1.5" fill="#334155"/>
       </svg>`,
     },
   };
@@ -189,6 +333,9 @@
   const rand = prng(DATA.seed);
   const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
   const frame = () => new Promise((resolve) => requestAnimationFrame(resolve));
+  const fmt = (value) => Number(value).toLocaleString("en-US");
+  const easeInOut = (x) => (x < 0.5 ? 2 * x * x : 1 - Math.pow(-2 * x + 2, 2) / 2);
+  const easeOut = (x) => 1 - Math.pow(1 - x, 3);
 
   function el(tag, className, text) {
     const node = document.createElement(tag);
@@ -204,9 +351,21 @@
     }
     return copy;
   }
-  function ordinal(position) {
-    return DATA.winners.length > 1 ? `Winner #${position}` : "Winner";
+  async function tween(ms, step) {
+    const start = performance.now();
+    for (;;) {
+      const now = await frame();
+      const x = Math.min(1, (now - start) / ms);
+      step(x);
+      if (x >= 1) return;
+    }
   }
+
+  // Every name on stage has an id (its position in DATA.names); winners point to it with `slot`,
+  // so namesakes never get mixed up.
+  const items = DATA.names.map((name, id) => ({ name, id }));
+  const winnerRank = new Map(DATA.winners.map((winner, index) => [winner.slot, index]));
+  const medal = (rank) => ["🥇", "🥈", "🥉"][rank] || `#${rank + 1}`;
 
   // ---------- confetti ----------
   function confetti(duration = 2800) {
@@ -239,108 +398,251 @@
   }
 
   // ---------- shared views ----------
-  function winnerCard(winner, position) {
+  function ticketLabel(index) {
+    if (!DATA.lottery) return "";
+    return `Ticket #${String(DATA.lottery.draws[index].ticket).padStart(DATA.lottery.digits, "0")}`;
+  }
+  function winnerCard(index) {
+    const winner = DATA.winners[index];
     const card = el("div", "card");
-    if (DATA.winners.length > 1) card.appendChild(el("div", "pos", ordinal(position)));
+    if (DATA.winners.length > 1) card.appendChild(el("div", "pos", `Winner #${index + 1}`));
     card.appendChild(el("div", "name", winner.name));
-    if (winner.detail) card.appendChild(el("div", "detail", winner.detail));
+    const detail = [ticketLabel(index), winner.detail].filter(Boolean).join(" · ");
+    if (detail) card.appendChild(el("div", "detail", detail));
     return card;
   }
-
-  async function spotlight(winner, position, ms = 2300) {
+  async function celebrate(index, ms = 2300) {
     const overlay = el("div", "overlay");
-    overlay.appendChild(winnerCard(winner, position));
+    overlay.appendChild(winnerCard(index));
     stage.appendChild(overlay);
     confetti();
     await sleep(ms);
     overlay.remove();
   }
-
+  // A running list of winners only helps when there are several; a single winner gets the whole stage.
   function sidePanel() {
+    if (DATA.winners.length < 2) return null;
     const side = el("div", "side");
-    side.appendChild(el("h3", null, DATA.winners.length > 1 ? "Winners" : "Winner"));
+    side.appendChild(el("h3", null, "Winners"));
     return side;
   }
-  function addChip(side, winner, position) {
+  function mount(...nodes) {
+    main.replaceChildren(...nodes.filter(Boolean));
+  }
+  function addChip(side, index) {
+    if (!side) return;
     const chip = el("div", "chip");
-    chip.appendChild(el("b", null, `#${position}`));
-    chip.appendChild(el("span", null, winner.name));
+    chip.appendChild(el("b", null, `#${index + 1}`));
+    chip.appendChild(el("span", null, DATA.winners[index].name));
     side.appendChild(chip);
   }
-
-  function showResults(celebrate) {
+  function showResults(celebrateNow) {
     main.replaceChildren();
     const count = DATA.winners.length;
     const size = count === 1 ? 1 : count <= 3 ? 2 : count <= 8 ? 3 : 4;
     const results = el("div", `results size-${size}`);
     results.appendChild(el("h2", null, count > 1 ? "🏆 Winners" : "🏆 And the winner is"));
     const cards = el("div", "cards");
-    DATA.winners.forEach((winner, i) => {
-      const card = winnerCard(winner, i + 1);
+    DATA.winners.forEach((_, i) => {
+      const card = winnerCard(i);
       card.style.animationDelay = `${Math.min(i, 12) * 80}ms`;
       cards.appendChild(card);
     });
     results.appendChild(cards);
     main.appendChild(results);
     statusEl.textContent = DATA.done;
-    if (celebrate) confetti(3200);
+    if (celebrateNow) confetti(3200);
+  }
+  function showIdle() {
+    const results = el("div", "results size-2");
+    results.appendChild(el("div", "idle-icon", "🎟️"));
+    results.appendChild(el("div", "idle-title", DATA.idleTitle));
+    results.appendChild(el("h2", null, DATA.idleSubtitle));
+    main.replaceChildren(results);
+    statusEl.textContent = DATA.done;
+  }
+
+  // ---------- canvas helpers ----------
+  function sizeCanvas(canvas, box) {
+    const dpr = window.devicePixelRatio || 1;
+    const w = Math.max(10, box.clientWidth), h = Math.max(10, box.clientHeight);
+    canvas.width = Math.round(w * dpr); canvas.height = Math.round(h * dpr);
+    const ctx = canvas.getContext("2d");
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    return { ctx, w, h, dpr };
+  }
+  function offscreen(w, h, dpr) {
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(w * dpr); canvas.height = Math.round(h * dpr);
+    const ctx = canvas.getContext("2d");
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    return { canvas, ctx };
+  }
+  function roundRectPath(ctx, x, y, w, h, r) {
+    r = Math.max(0, Math.min(r, w / 2, h / 2));
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+  const fitCache = new Map();
+  function fitText(ctx, text, maxWidth) {
+    const key = `${ctx.font}|${Math.round(maxWidth)}|${text}`;
+    if (fitCache.has(key)) return fitCache.get(key);
+    let result = text;
+    if (ctx.measureText(text).width > maxWidth) {
+      const chars = Array.from(text);
+      let lo = 0, hi = chars.length;
+      while (lo < hi) {
+        const mid = Math.ceil((lo + hi) / 2);
+        if (ctx.measureText(chars.slice(0, mid).join("") + "…").width <= maxWidth) lo = mid; else hi = mid - 1;
+      }
+      result = lo > 0 ? chars.slice(0, lo).join("") + "…" : "";
+    }
+    if (fitCache.size > 6000) fitCache.clear();
+    fitCache.set(key, result);
+    return result;
+  }
+  function initials(name) {
+    const words = name.replace(/\([^)]*\)/g, " ").split(/[\s,]+/).filter((word) => /\p{L}/u.test(word));
+    if (!words.length) return Array.from(name)[0] || "";
+    const first = Array.from(words[0])[0];
+    const last = words.length > 1 ? Array.from(words[words.length - 1])[0] : "";
+    return (first + last).toUpperCase();
+  }
+  // Tiles that fill a box: long names get wide tiles; thousands of people become small tiles.
+  function gridLayout(n, W, H) {
+    const gap = n > 600 ? 1.5 : n > 150 ? 3 : 6;
+    const target = n <= 80 ? 3.2 : 1.8;
+    let best = null;
+    for (let cols = 1; cols <= Math.max(1, Math.min(n, 160)); cols++) {
+      const rows = Math.ceil(n / cols);
+      const tw = (W - gap * (cols - 1)) / cols;
+      const th = (H - gap * (rows - 1)) / rows;
+      if (tw <= 0 || th <= 0) continue;
+      const score = Math.min(tw / target, th);
+      if (!best || score > best.score) best = { cols, rows, tw, th, score };
+    }
+    if (!best) best = { cols: 1, rows: n, tw: W, th: H / Math.max(1, n) };
+    const th = Math.min(best.th, 56);
+    const tw = Math.min(best.tw, th * 5.5, 300);
+    const cols = best.cols, rows = best.rows;
+    const ox = (W - (cols * tw + (cols - 1) * gap)) / 2;
+    const oy = (H - (rows * th + (rows - 1) * gap)) / 2;
+    const lastRow = n - (rows - 1) * cols;                       // the last row is centered
+    const shift = (row) => (row === rows - 1 ? ((cols - lastRow) * (tw + gap)) / 2 : 0);
+    return {
+      cols, rows, tw, th, gap, ox, oy,
+      rect: (i) => {
+        const row = Math.floor(i / cols);
+        return { x: ox + shift(row) + (i % cols) * (tw + gap), y: oy + row * (th + gap), w: tw, h: th };
+      },
+      indexAt: (x, y) => {
+        const row = Math.floor((y - oy) / (th + gap));
+        const col = Math.floor((x - ox - shift(row)) / (tw + gap));
+        const index = row * cols + col;
+        return col < 0 || row < 0 || col >= cols || index >= n ? -1 : index;
+      },
+    };
+  }
+  function drawTile(ctx, rect, name, fill, ink, alpha = 1) {
+    if (rect.w < 0.5 || rect.h < 0.5 || alpha <= 0) return;
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = fill;
+    const radius = Math.min(8, rect.h * 0.28, rect.w * 0.28);
+    if (radius >= 1.5) { roundRectPath(ctx, rect.x, rect.y, rect.w, rect.h, radius); ctx.fill(); }
+    else ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
+    let label = "";
+    if (rect.w >= 78 && rect.h >= 18) {
+      ctx.font = `600 ${Math.max(11, Math.min(22, rect.h * 0.42))}px system-ui, sans-serif`;
+      label = fitText(ctx, name, rect.w - 12);
+    } else if (rect.w >= 22 && rect.h >= 14) {
+      ctx.font = `700 ${Math.max(8, Math.min(15, rect.h * 0.55, rect.w * 0.42))}px system-ui, sans-serif`;
+      label = initials(name);
+    }
+    if (label) {
+      ctx.fillStyle = ink; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.fillText(label, rect.x + rect.w / 2, rect.y + rect.h / 2 + 0.5);
+    }
+    ctx.globalAlpha = 1;
   }
 
   // ---------- wheel ----------
-  // Every name on stage has an id (its position in DATA.names); winners point to it with `slot`,
-  // so namesakes never get mixed up.
-  const items = DATA.names.map((name, id) => ({ name, id }));
-
   async function runWheel() {
     const slices = items.slice();
     const area = el("div", "wheel-area");
     const box = el("div", "wheel-box");
     const canvas = el("canvas");
     const ticker = el("div", "ticker", " ");
-    box.appendChild(el("div", "pointer"));
-    box.appendChild(canvas);
-    area.appendChild(box);
-    area.appendChild(ticker);
+    const count = el("div", "subtle", `${fmt(slices.length)} names on the wheel`);
+    box.append(el("div", "pointer"), canvas);
+    area.append(box, ticker, count);
     const side = sidePanel();
-    main.replaceChildren(area, side);
+    mount(area, side);
 
-    const size = Math.max(200, Math.min(area.clientHeight - 48, area.clientWidth - 10, 440));
+    const size = Math.max(200, Math.min(area.clientHeight - 64, area.clientWidth - 10, 440));
     const dpr = window.devicePixelRatio || 1;
     canvas.width = size * dpr; canvas.height = size * dpr;
     canvas.style.width = `${size}px`; canvas.style.height = `${size}px`;
     const ctx = canvas.getContext("2d");
-    ctx.scale(dpr, dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const face = offscreen(size, size, dpr);
     let rotation = rand() * TAU;
 
-    function draw() {
-      const r = size / 2, n = slices.length, slice = TAU / n;
-      ctx.clearRect(0, 0, size, size);
-      ctx.save();
-      ctx.translate(r, r);
-      ctx.rotate(rotation);
+    function sliceColor(i, n) {
+      if (n > 60) return `hsl(${(i / n) * 360}, 78%, 62%)`;
+      if (i === n - 1 && n % COLORS.length === 1 && n > 1) return COLORS[1];
+      return COLORS[i % COLORS.length];
+    }
+    // The face is drawn once (and again when a winner leaves the wheel); each frame only rotates it.
+    function renderFace() {
+      const f = face.ctx, r = size / 2, n = slices.length, slice = TAU / n;
+      f.clearRect(0, 0, size, size);
+      f.save();
+      f.translate(r, r);
+      if (n > 180 && f.createConicGradient) {
+        // Hundreds of hairline slices only produce moiré: paint one smooth color ring instead. The pointer
+        // still resolves the exact slice (and name) under it.
+        const ring = f.createConicGradient(0, 0, 0);
+        for (let stop = 0; stop <= 12; stop++) ring.addColorStop(stop / 12, `hsl(${stop * 30}, 78%, 62%)`);
+        f.beginPath(); f.arc(0, 0, r - 4, 0, TAU); f.fillStyle = ring; f.fill();
+        f.strokeStyle = "rgba(11,16,38,.22)"; f.lineWidth = 1;
+        for (let tick = 0; tick < 48; tick++) {
+          const angle = (tick / 48) * TAU;
+          f.beginPath(); f.moveTo(Math.cos(angle) * r * 0.2, Math.sin(angle) * r * 0.2);
+          f.lineTo(Math.cos(angle) * (r - 4), Math.sin(angle) * (r - 4)); f.stroke();
+        }
+        f.restore();
+        return;
+      }
       for (let i = 0; i < n; i++) {
-        ctx.beginPath(); ctx.moveTo(0, 0); ctx.arc(0, 0, r - 4, i * slice, (i + 1) * slice); ctx.closePath();
-        let color = COLORS[i % COLORS.length];
-        if (i === n - 1 && n % COLORS.length === 1 && n > 1) color = COLORS[1];
-        ctx.fillStyle = color; ctx.fill();
-        ctx.strokeStyle = "rgba(11,16,38,.35)"; ctx.lineWidth = n > 90 ? 0.5 : 1.2; ctx.stroke();
+        f.beginPath(); f.moveTo(0, 0); f.arc(0, 0, r - 4, i * slice, (i + 1) * slice); f.closePath();
+        f.fillStyle = sliceColor(i, n); f.fill();
+        if (n <= 400) { f.strokeStyle = "rgba(11,16,38,.35)"; f.lineWidth = n > 90 ? 0.5 : 1.2; f.stroke(); }
         if (n <= 48) {
-          ctx.save();
-          ctx.rotate(i * slice + slice / 2);
-          ctx.fillStyle = "#0b1026";
+          f.save();
+          f.rotate(i * slice + slice / 2);
+          f.fillStyle = "#0b1026";
           const fontSize = Math.max(9, Math.min(16, slice * r * 0.55));
-          ctx.font = `700 ${fontSize}px system-ui, sans-serif`;
-          ctx.textAlign = "right"; ctx.textBaseline = "middle";
-          const maxChars = Math.max(6, Math.floor((r * 0.72) / (fontSize * 0.55)));
-          const name = slices[i].name;
-          const label = name.length > maxChars ? name.slice(0, maxChars - 1) + "…" : name;
-          ctx.fillText(label, r - 14, 0);
-          ctx.restore();
+          f.font = `700 ${fontSize}px system-ui, sans-serif`;
+          f.textAlign = "right"; f.textBaseline = "middle";
+          f.fillText(fitText(f, slices[i].name, r * 0.72), r - 14, 0);
+          f.restore();
         }
       }
+      f.restore();
+    }
+    function draw() {
+      const r = size / 2;
+      ctx.clearRect(0, 0, size, size);
+      ctx.save(); ctx.translate(r, r); ctx.rotate(rotation);
+      ctx.drawImage(face.canvas, -r, -r, size, size);
       ctx.restore();
       ctx.beginPath(); ctx.arc(r, r, r * 0.11, 0, TAU);
-      ctx.fillStyle = "#0b1026"; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = "#fbbf24"; ctx.stroke();
+      ctx.fillStyle = "#0b1026"; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = GOLD; ctx.stroke();
     }
     function underPointer() {
       const slice = TAU / slices.length;
@@ -348,6 +650,7 @@
       return slices[Math.floor(angle / slice) % slices.length].name;
     }
 
+    renderFace();
     draw();
     for (let w = 0; w < DATA.winners.length; w++) {
       const winner = DATA.winners[w];
@@ -356,23 +659,20 @@
       const target = -Math.PI / 2 - (index + 0.2 + rand() * 0.6) * slice;
       const delta = (((target - rotation) % TAU) + TAU) % TAU;
       const from = rotation, to = rotation + TAU * (5 + Math.floor(rand() * 3)) + delta;
-      const duration = 5200 + rand() * 900;
       statusEl.textContent = DATA.winners.length > 1 ? `Spinning for winner #${w + 1}…` : "Spinning…";
-      const start = performance.now();
-      for (;;) {
-        const now = await frame();
-        const t = Math.min(1, (now - start) / duration);
-        rotation = from + (to - from) * (1 - Math.pow(1 - t, 4));
+      await tween(5200 + rand() * 900, (x) => {
+        rotation = from + (to - from) * (1 - Math.pow(1 - x, 4));
         draw();
         ticker.textContent = underPointer();
-        if (t >= 1) break;
-      }
+      });
       ticker.textContent = winner.name;
-      await spotlight(winner, w + 1);
-      addChip(side, winner, w + 1);
+      await celebrate(w);
+      addChip(side, w);
       if (slices.length > 1) {
         slices.splice(index, 1);
+        renderFace();
         draw();
+        count.textContent = `${fmt(slices.length)} names on the wheel`;
       }
     }
     await sleep(400);
@@ -380,41 +680,10 @@
   }
 
   // ---------- race ----------
-  async function runRace() {
-    const themeName = THEMES[DATA.theme] ? DATA.theme : "cars";
-    const theme = THEMES[themeName];
-    const racers = shuffle(items).map((item) => ({
-      name: item.name,
-      rank: DATA.winners.findIndex((winner) => winner.slot === item.id),
-    }));
-    const k = DATA.winners.length;
-    const race = el("div", `race theme-${themeName}`);
-    main.replaceChildren(race);
-
-    const laneHeight = Math.max(22, Math.min(52, (main.clientHeight - racers.length * 4) / racers.length));
-    const racerHeight = Math.max(14, Math.min(30, laneHeight * 0.64));
-    const racerWidth = racerHeight * theme.ratio;
-    const T = 7600, CHECKPOINTS = 8, GAP = 600;
-
-    racers.forEach((racer, index) => {
-      const lane = el("div", "lane");
-      lane.style.height = `${laneHeight}px`;
-      lane.appendChild(el("div", "label", racer.name));
-      const track = el("div", "track");
-      const body = el("div", "racer");
-      body.style.width = `${racerWidth}px`;
-      body.innerHTML = theme.svg(COLORS[index % COLORS.length], index + 1);
-      const trail = el("div", "trail");
-      body.appendChild(trail);
-      track.appendChild(body);
-      lane.appendChild(track);
-      race.appendChild(lane);
-      Object.assign(racer, {
-        lane, track, body, trail, phase: rand() * TAU, previous: 0,
-        wheels: body.querySelectorAll(".wheel"), flames: body.querySelectorAll(".flame"),
-      });
-
-      const final = racer.rank >= 0 ? 1 - 0.03 * racer.rank : (1 - 0.03 * k) - (0.04 + rand() * 0.2);
+  function planRace(racers, k) {
+    const spread = racers.length > LANES_MAX ? 0.5 : 0.2;  // big fields stretch into a long pack
+    for (const racer of racers) {
+      const final = racer.rank >= 0 ? 1 - 0.03 * racer.rank : (1 - 0.03 * k) - (0.04 + Math.pow(rand(), 0.8) * spread);
       const points = [0];
       for (let j = 1; j < CHECKPOINTS; j++) {
         const noise = (rand() - 0.5) * 0.22 * Math.sin((Math.PI * j) / CHECKPOINTS);
@@ -423,65 +692,471 @@
       }
       points.push(final);
       racer.points = points;
+      racer.phase = rand() * TAU;
+      racer.p = 0;
+    }
+  }
+  function raceProgress(racer, t, k) {
+    if (t < RACE_T) {
+      const x = (t / RACE_T) * CHECKPOINTS, j = Math.floor(x), f = x - j;
+      const s = (1 - Math.cos(Math.PI * f)) / 2;
+      return racer.points[j] + (racer.points[j + 1] - racer.points[j]) * s;
+    }
+    const last = racer.points[CHECKPOINTS];
+    if (racer.rank < 0) return Math.min(last + ((t - RACE_T) / 1000) * 0.012, 0.97 - 0.03 * k);
+    if (racer.rank === 0) return 1;
+    return last + (1 - last) * Math.min(1, (t - RACE_T) / (FINISH_GAP * racer.rank));
+  }
+  function raceStatus(theme, t) {
+    const phase = Math.min(theme.status.length - 1, Math.floor((t / RACE_T) * theme.status.length));
+    statusEl.textContent = t < RACE_T ? theme.status[phase] : theme.finish;
+  }
+
+  async function runRace() {
+    const themeName = THEMES[DATA.theme] ? DATA.theme : "cars";
+    const theme = THEMES[themeName];
+    const k = DATA.winners.length;
+    const racers = shuffle(items).map((item) => ({
+      name: item.name, id: item.id, rank: winnerRank.has(item.id) ? winnerRank.get(item.id) : -1,
+    }));
+    planRace(racers, k);
+    if (racers.length <= LANES_MAX) await raceLanes(racers, theme, themeName, k);
+    else await raceField(racers, theme, themeName, k);
+    confetti();
+    await sleep(2200);
+    showResults(false);
+  }
+
+  async function raceLanes(racers, theme, themeName, k) {
+    const race = el("div", `race theme-${themeName}`);
+    main.replaceChildren(race);
+    const laneHeight = Math.max(22, Math.min(52, (main.clientHeight - racers.length * 4) / racers.length));
+    const racerHeight = Math.max(14, Math.min(laneHeight - 2, laneHeight * (theme.scale || 0.64)));
+    const racerWidth = racerHeight * theme.ratio;
+
+    racers.forEach((racer, index) => {
+      const lane = el("div", "lane");
+      lane.style.height = `${laneHeight}px`;
+      const label = el("div", "label", racer.name);
+      const track = el("div", "track");
+      const body = el("div", "racer");
+      body.style.width = `${racerWidth}px`;
+      body.innerHTML = theme.svg(COLORS[index % COLORS.length], index + 1);
+      const trail = el("div", "trail");
+      if (theme.trail !== false) body.appendChild(trail);
+      track.appendChild(body);
+      lane.append(label, track);
+      race.appendChild(lane);
+      const parts = (selector) => Array.from(body.querySelectorAll(selector)).map((node) => [
+        node, Number(node.getAttribute("data-cx")), Number(node.getAttribute("data-cy"))]);
+      Object.assign(racer, { lane, label, track, body, trail, previous: 0, spins: parts(".spin"), flames: parts(".flame") });
     });
 
-    function progress(racer, t) {
-      if (t < T) {
-        const x = (t / T) * CHECKPOINTS, j = Math.floor(x), f = x - j;
-        const s = (1 - Math.cos(Math.PI * f)) / 2;
-        return racer.points[j] + (racer.points[j + 1] - racer.points[j]) * s;
-      }
-      const last = racer.points[CHECKPOINTS];
-      if (racer.rank < 0) return Math.min(last + ((t - T) / 1000) * 0.012, 0.97 - 0.03 * k);
-      if (racer.rank === 0) return 1;
-      return last + (1 - last) * Math.min(1, (t - T) / (GAP * racer.rank));
-    }
-
-    const end = T + GAP * Math.max(0, k - 1) + 700;
+    const end = RACE_T + FINISH_GAP * Math.max(0, k - 1) + 700;
     const start = performance.now();
-    const finished = new Set();
     for (;;) {
       const now = await frame();
       const t = now - start;
-      const phaseIndex = Math.min(theme.status.length - 1, Math.floor((t / T) * theme.status.length));
-      statusEl.textContent = t < T ? theme.status[phaseIndex] : theme.finish;
+      raceStatus(theme, t);
       for (const racer of racers) {
         const width = racer.track.clientWidth - racerWidth - 16;
-        const p = Math.min(1, progress(racer, Math.min(t, end)));
+        const p = Math.min(1, raceProgress(racer, Math.min(t, end), k));
         const seconds = Math.max(0.001, (t - (racer.previousT ?? t - 16)) / 1000);
         const speed = Math.max(0, p - racer.previous) / seconds;  // share of the track per second
         racer.previous = p;
         racer.previousT = t;
-        let wobble = 0, tilt = 0;
-        if (themeName === "cars") {
-          wobble = Math.sin(t / 45 + racer.phase) * 0.6;
-          racer.wheels.forEach((wheel) => {
-            const [cx, cy] = wheel === racer.wheels[0] ? [16, 20] : [52, 20];
-            wheel.setAttribute("transform", `rotate(${(p * 5400) % 360} ${cx} ${cy})`);
-          });
-        } else if (themeName === "rockets") {
-          wobble = Math.sin(t / 90 + racer.phase) * 1.2;
-          const flicker = 0.75 + 0.25 * Math.sin(t / 30 + racer.phase * 3);
-          racer.flames.forEach((flame) => flame.setAttribute("transform", `translate(17 13) scale(${flicker} 1) translate(-17 -13)`));
-        } else {
-          wobble = Math.sin(t / 220 + racer.phase) * 3;
-          tilt = Math.sin(t / 220 + racer.phase + 1) * 4;
+        for (const [node, cx, cy] of racer.spins) node.setAttribute("transform", `rotate(${(p * 5400) % 360} ${cx} ${cy})`);
+        const flicker = 0.75 + 0.25 * Math.sin(t / 30 + racer.phase * 3);
+        for (const [node, cx, cy] of racer.flames) {
+          node.setAttribute("transform", `translate(${cx} ${cy}) scale(${flicker} ${flicker}) translate(${-cx} ${-cy})`);
         }
         racer.trail.style.width = `${Math.min(racerWidth * 1.2, speed * racerWidth * 5)}px`;
         racer.trail.style.opacity = String(Math.min(0.85, speed * 5));
+        const motion = theme.motion(t, racer.phase);
         racer.body.style.transform =
-          `translate(${Math.max(0, p * width)}px, calc(-50% + ${wobble}px)) rotate(${tilt}deg)`;
-        if (racer.rank >= 0 && p >= 1 && !finished.has(racer)) {
-          finished.add(racer);
+          `translate(${Math.max(0, p * width)}px, calc(-50% + ${motion.dy}px)) rotate(${motion.rot}deg)`;
+        if (racer.rank >= 0 && p >= 1 && !racer.done) {
+          racer.done = true;
           racer.lane.classList.add("won");
-          const medal = ["🥇", "🥈", "🥉"][racer.rank] || `#${racer.rank + 1}`;
-          racer.lane.querySelector(".label").textContent = `${medal} ${racer.name}`;
+          racer.label.textContent = `${medal(racer.rank)} ${racer.name}`;
         }
       }
       if (t >= end) break;
     }
+  }
+
+  // One bitmap per color at the exact on-screen size: copying bitmaps is far cheaper than re-drawing SVG
+  // hundreds of times per frame.
+  function racerSprites(theme, width, height, dpr) {
+    return Promise.all(COLORS.map((color) => new Promise((resolve) => {
+      const image = new Image();
+      const svg = theme.svg(color, "").replace("<svg ", `<svg width="${Math.round(theme.ratio * 64)}" height="64" `);
+      let settled = false;
+      const finish = (result) => { if (!settled) { settled = true; resolve(result); } };
+      image.onload = () => {
+        const sprite = document.createElement("canvas");
+        sprite.width = Math.max(1, Math.ceil(width * dpr)); sprite.height = Math.max(1, Math.ceil(height * dpr));
+        sprite.getContext("2d").drawImage(image, 0, 0, sprite.width, sprite.height);
+        finish(sprite);
+      };
+      image.onerror = () => finish(null);
+      image.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+      setTimeout(() => finish(null), 1500);
+    })));
+  }
+
+  // Big fields: everyone races on one canvas; a live leaderboard shows the names in front.
+  async function raceField(racers, theme, themeName, k) {
+    const field = el("div", "field");
+    const box = el("div", `field-track field-${themeName}`);
+    const canvas = el("canvas");
+    box.appendChild(canvas);
+    const board = el("div", "board");
+    board.appendChild(el("h3", null, "Leaderboard"));
+    const list = el("ol", "board-list");
+    board.append(list, el("div", "subtle", `${fmt(racers.length)} racing`));
+    field.append(box, board);
+    main.replaceChildren(field);
+
+    const { ctx, w, h, dpr } = sizeCanvas(canvas, box);
+    const pad = 8;
+    const rows = Math.max(1, Math.min(racers.length, Math.floor((h - pad * 2) / 6)));
+    const rowH = (h - pad * 2) / rows;
+    const iconH = Math.max(9, Math.min(28, rowH * 1.9, 48 / theme.ratio));  // long racers (trains) stay compact
+    const iconW = iconH * theme.ratio;
+    const images = await racerSprites(theme, iconW, iconH, dpr);
+    const perRow = Math.ceil(racers.length / rows);
+    racers.forEach((racer, i) => {
+      racer.color = i % COLORS.length;
+      racer.y = pad + ((i % rows) + 0.5) * rowH + (perRow > 1 ? (rand() - 0.5) * rowH * 0.8 : 0);
+    });
+    const drawOrder = racers.slice().sort((a, b) => a.y - b.y);
+    const shown = Math.min(10, racers.length);
+    const slots = Array.from({ length: shown }, () => {
+      const li = el("li");
+      const dot = el("span", "dot");
+      const name = el("span", "nm");
+      li.append(dot, name);
+      list.appendChild(li);
+      return { li, dot, name };
+    });
+    const byPosition = (a, b) => (b.p - a.p) || ((a.rank < 0 ? 99 : a.rank) - (b.rank < 0 ? 99 : b.rank));
+    let leaders = racers.slice(0, 3);
+    let lastBoard = -Infinity;
+
+    const end = RACE_T + FINISH_GAP * Math.max(0, k - 1) + 700;
+    const start = performance.now();
+    for (;;) {
+      const now = await frame();
+      const t = now - start;
+      raceStatus(theme, t);
+      ctx.clearRect(0, 0, w, h);
+      for (const racer of drawOrder) {
+        racer.p = Math.min(1, raceProgress(racer, Math.min(t, end), k));
+        const motion = theme.motion(t, racer.phase);
+        const x = pad + racer.p * (w - iconW - pad - 18);
+        const y = racer.y - iconH / 2 + motion.dy;
+        racer.x = x;
+        if (racer.rank >= 0 && racer.p >= 1) {
+          ctx.beginPath(); ctx.arc(x + iconW / 2, racer.y, Math.max(iconW, iconH) * 0.62, 0, TAU);
+          ctx.fillStyle = "rgba(251,191,36,.28)"; ctx.fill();
+        }
+        const image = images[racer.color];
+        if (image) ctx.drawImage(image, x, y, iconW, iconH);
+        else { ctx.beginPath(); ctx.arc(x + iconH / 2, racer.y, iconH / 2, 0, TAU); ctx.fillStyle = COLORS[racer.color]; ctx.fill(); }
+      }
+      // Name tags over the three racers in front, nudged apart when they would overlap.
+      ctx.font = "600 11px system-ui, sans-serif";
+      ctx.textBaseline = "middle";
+      const placed = [];
+      for (const racer of leaders) {
+        const label = fitText(ctx, racer.rank >= 0 && racer.p >= 1 ? `${medal(racer.rank)} ${racer.name}` : racer.name, 150);
+        const tw = ctx.measureText(label).width + 12;
+        const tx = Math.max(2, Math.min(w - tw - 16, racer.x + iconW / 2 - tw / 2));
+        const anchor = Math.max(2, racer.y - iconH / 2 - 20);
+        let ty = anchor;
+        for (let attempt = 1; attempt <= 8; attempt++) {
+          if (!placed.some((tag) => tx < tag.x + tag.w && tx + tw > tag.x && ty < tag.y + 19 && ty + 19 > tag.y)) break;
+          ty = Math.max(2, Math.min(h - 19, anchor + (attempt % 2 ? 1 : -1) * Math.ceil(attempt / 2) * 20));
+        }
+        placed.push({ x: tx, y: ty, w: tw });
+        if (Math.abs(ty - anchor) > 1) {
+          ctx.strokeStyle = "rgba(248,250,252,.55)"; ctx.lineWidth = 1;
+          ctx.beginPath(); ctx.moveTo(tx + tw / 2, ty + (ty < racer.y ? 17 : 0)); ctx.lineTo(racer.x + iconW / 2, racer.y); ctx.stroke();
+        }
+        ctx.fillStyle = "rgba(2,6,23,.8)";
+        roundRectPath(ctx, tx, ty, tw, 17, 8); ctx.fill();
+        ctx.fillStyle = "#f8fafc"; ctx.textAlign = "left";
+        ctx.fillText(label, tx + 6, ty + 9);
+      }
+      if (t - lastBoard > 160 || t >= end) {
+        lastBoard = t;
+        const order = racers.slice().sort(byPosition);
+        leaders = order.slice(0, 3);
+        order.slice(0, shown).forEach((racer, i) => {
+          const finished = racer.rank >= 0 && racer.p >= 1;
+          slots[i].name.textContent = finished ? `${medal(racer.rank)} ${racer.name}` : racer.name;
+          slots[i].dot.style.background = COLORS[racer.color];
+          slots[i].li.classList.toggle("won", finished);
+        });
+      }
+      if (t >= end) break;
+    }
+  }
+
+  // ---------- spotlight ----------
+  async function runSpotlight() {
+    const area = el("div", "tiles-area");
+    const box = el("div", "tiles-box");
+    const canvas = el("canvas");
+    box.appendChild(canvas);
+    const lit = el("div", "ticker", " ");
+    area.append(box, lit);
+    const side = sidePanel();
+    mount(area, side);
+
+    const { ctx, w, h, dpr } = sizeCanvas(canvas, box);
+    const tiles = shuffle(items);
+    const layout = gridLayout(tiles.length, w, h);
+    tiles.forEach((tile, i) => { tile.rect = layout.rect(i); tile.won = false; });
+    const base = offscreen(w, h, dpr);
+    function renderBase() {
+      base.ctx.clearRect(0, 0, w, h);
+      for (const tile of tiles) {
+        drawTile(base.ctx, tile.rect, tile.name, tile.won ? GOLD : "rgba(199,210,254,.34)", tile.won ? "#0b1026" : "#f8fafc");
+      }
+    }
+    const tileSize = Math.max(layout.tw, layout.th);
+    const wide = Math.max(80, Math.min(170, tileSize * 2.6));
+    let lx = w / 2, ly = h / 2, radius = wide;
+    function draw(focus) {
+      ctx.clearRect(0, 0, w, h);
+      ctx.drawImage(base.canvas, 0, 0, w, h);
+      const shade = ctx.createRadialGradient(lx, ly, radius * 0.4, lx, ly, radius);
+      shade.addColorStop(0, "rgba(2,6,23,0)");
+      shade.addColorStop(1, "rgba(2,6,23,.55)");
+      ctx.fillStyle = shade;
+      ctx.fillRect(0, 0, w, h);
+      const glow = ctx.createRadialGradient(lx, ly, 0, lx, ly, radius * 0.75);
+      glow.addColorStop(0, "rgba(254,243,199,.30)");
+      glow.addColorStop(1, "rgba(254,243,199,0)");
+      ctx.fillStyle = glow;
+      ctx.beginPath(); ctx.arc(lx, ly, radius * 0.75, 0, TAU); ctx.fill();
+      if (focus) {
+        const rect = focus.rect;
+        ctx.lineWidth = 3; ctx.strokeStyle = GOLD;
+        roundRectPath(ctx, rect.x - 3, rect.y - 3, rect.w + 6, rect.h + 6, 8); ctx.stroke();
+        ctx.font = "700 15px system-ui, sans-serif";
+        const label = fitText(ctx, focus.name, Math.min(320, w - 20));
+        const tw = ctx.measureText(label).width + 20;
+        const tx = Math.max(4, Math.min(w - tw - 4, rect.x + rect.w / 2 - tw / 2));
+        const above = rect.y - 34 >= 4;
+        const ty = above ? rect.y - 34 : rect.y + rect.h + 8;
+        ctx.fillStyle = GOLD;
+        roundRectPath(ctx, tx, ty, tw, 26, 13); ctx.fill();
+        ctx.fillStyle = "#0b1026"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+        ctx.fillText(label, tx + tw / 2, ty + 13.5);
+      }
+      const index = layout.indexAt(lx, ly);
+      if (index >= 0 && index < tiles.length) lit.textContent = tiles[index].name;
+    }
+    const center = (tile) => [tile.rect.x + tile.rect.w / 2, tile.rect.y + tile.rect.h / 2];
+
+    renderBase();
+    draw();
+    for (let w2 = 0; w2 < DATA.winners.length; w2++) {
+      const target = tiles.find((tile) => tile.id === DATA.winners[w2].slot);
+      statusEl.textContent = DATA.winners.length > 1 ? `Searching for winner #${w2 + 1}…` : "Searching the room…";
+      const stops = Array.from({ length: 10 }, () => tiles[Math.floor(rand() * tiles.length)]);
+      stops.push(target);
+      for (let s = 0; s < stops.length; s++) {
+        const [fx, fy] = [lx, ly];
+        const [tx, ty] = center(stops[s]);
+        await tween(170 + 780 * Math.pow(s / stops.length, 2.2), (x) => {
+          const e = easeInOut(x);
+          lx = fx + (tx - fx) * e; ly = fy + (ty - fy) * e;
+          draw();
+        });
+      }
+      const tight = Math.max(target.rect.w, target.rect.h) * 0.75 + 16;
+      await tween(600, (x) => { radius = wide + (tight - wide) * easeOut(x); draw(target); });
+      lit.textContent = DATA.winners[w2].name;
+      await sleep(500);
+      await celebrate(w2);
+      target.won = true;
+      renderBase();
+      addChip(side, w2);
+      await tween(400, (x) => { radius = tight + (wide - tight) * x; draw(); });
+    }
+    await sleep(400);
+    showResults(false);
+  }
+
+  // ---------- last standing ----------
+  async function runElimination() {
+    const box = el("div", "tiles-box");
+    const canvas = el("canvas");
+    box.appendChild(canvas);
+    main.replaceChildren(box);
+    const { ctx, w, h } = sizeCanvas(canvas, box);
+    const k = DATA.winners.length;
+    let active = shuffle(items).map((item) => ({
+      ...item, rank: winnerRank.has(item.id) ? winnerRank.get(item.id) : -1, state: "in", alpha: 1,
+    }));
+    let leaving = [];
+
+    let shape = "";
+    // Returns true when the grid keeps its columns and tile size, so tiles can glide without crossing each other.
+    function relayout(list, instant) {
+      const layout = gridLayout(list.length, w, h);
+      list.forEach((tile, i) => {
+        tile.to = layout.rect(i);
+        tile.from = tile.cur ? { ...tile.cur } : tile.to;
+        if (instant) tile.cur = { ...tile.to };
+      });
+      const next = `${layout.cols}|${Math.round(layout.tw)}|${Math.round(layout.th)}`;
+      const same = next === shape;
+      shape = next;
+      return same;
+    }
+    function draw() {
+      ctx.clearRect(0, 0, w, h);
+      const tense = active.length <= 12;
+      for (const tile of leaving) drawTile(ctx, tile.cur, tile.name, "#ef4444", "#ffffff", tile.alpha);
+      for (const tile of active) {
+        const fill = tile.state === "won" ? GOLD : tile.state === "flash" ? "#ef4444"
+          : tense ? "rgba(139,92,246,.55)" : "rgba(255,255,255,.14)";
+        drawTile(ctx, tile.cur, tile.name, fill, tile.state === "won" ? "#0b1026" : "#f8fafc");
+      }
+    }
+    const lerp = (a, b, e) => ({ x: a.x + (b.x - a.x) * e, y: a.y + (b.y - a.y) * e, w: a.w + (b.w - a.w) * e, h: a.h + (b.h - a.h) * e });
+
+    relayout(active, true);
+    draw();
+    statusEl.textContent = `${fmt(active.length)} in the running`;
+    await sleep(900);
+    let wave = 0;
+    while (active.length > k) {
+      wave++;
+      const excess = active.length - k;
+      const single = excess <= 5;
+      const removeCount = single ? 1 : Math.ceil(excess * 0.55);
+      const victims = new Set(shuffle(active.filter((tile) => tile.rank < 0)).slice(0, removeCount));
+      statusEl.textContent = single ? `${fmt(active.length)} left… who's next?` : `Wave ${wave}: ${fmt(removeCount)} out`;
+      victims.forEach((tile) => { tile.state = "flash"; });
+      draw();
+      await sleep(single ? 450 : 320);
+      leaving = [...victims];
+      active = active.filter((tile) => !victims.has(tile));
+      await tween(single ? 380 : 320, (x) => {
+        leaving.forEach((tile) => {
+          tile.alpha = 1 - x;
+          const shrink = 1 - 0.4 * x;
+          tile.cur = { x: tile.to.x + (tile.to.w * (1 - shrink)) / 2, y: tile.to.y + (tile.to.h * (1 - shrink)) / 2, w: tile.to.w * shrink, h: tile.to.h * shrink };
+        });
+        draw();
+      });
+      leaving = [];
+      if (active.length <= k) active.sort((a, b) => a.rank - b.rank);
+      if (relayout(active, false)) {
+        // Same grid: the remaining tiles glide into the freed spots.
+        await tween(single ? 520 : 560, (x) => {
+          const e = easeInOut(x);
+          active.forEach((tile) => { tile.cur = lerp(tile.from, tile.to, e); });
+          draw();
+        });
+      } else {
+        // The grid changes shape: shrink away and grow back in the new grid, so nobody slides across the others.
+        const scaled = (rect, s) => ({ x: rect.x + (rect.w * (1 - s)) / 2, y: rect.y + (rect.h * (1 - s)) / 2, w: rect.w * s, h: rect.h * s });
+        await tween(560, (x) => {
+          active.forEach((tile) => { tile.cur = x < 0.5 ? scaled(tile.from, 1 - easeInOut(x * 2)) : scaled(tile.to, easeOut((x - 0.5) * 2)); });
+          draw();
+        });
+      }
+      statusEl.textContent = `${fmt(active.length)} left`;
+    }
+    active.forEach((tile) => { tile.state = "won"; });
+    draw();
+    statusEl.textContent = k > 1 ? "The last ones standing!" : "The last one standing!";
     confetti();
-    await sleep(2200);
+    await sleep(2000);
+    showResults(false);
+  }
+
+  // ---------- lottery ----------
+  async function runLottery() {
+    const lottery = DATA.lottery;
+    const digits = lottery.digits;
+    const area = el("div", "lottery");
+    const reels = el("div", "reels");
+    const boxes = Array.from({ length: digits }, () => reels.appendChild(el("div", "reel", "·")));
+    const hint = el("div", "hint", `${fmt(lottery.tickets)} tickets in the draw`);
+    const candidates = el("div", "cands");
+    const ticket = el("div", "ticket");
+    ticket.append(el("div", "lot-label", "🎟️ Winning ticket"), reels);
+    area.append(ticket, hint, candidates);
+    const side = sidePanel();
+    mount(area, side);
+
+    const pad = (value) => String(value).padStart(digits, "0");
+    function countWithPrefix(prefix) {
+      const low = Number(prefix + "0".repeat(digits - prefix.length));
+      const high = Number(prefix + "9".repeat(digits - prefix.length));
+      return Math.max(0, Math.min(high, lottery.tickets) - Math.max(low, 1) + 1);
+    }
+    function showCandidates(neighbors) {
+      candidates.replaceChildren(...neighbors.map(([ticket, name]) => {
+        const chip = el("div", "cand");
+        chip.appendChild(el("b", null, `#${pad(ticket)}`));
+        chip.appendChild(document.createTextNode(name));
+        chip.dataset.ticket = String(ticket);
+        return chip;
+      }));
+    }
+    async function spinReel(reel, digit, ms) {
+      reel.classList.remove("set");
+      const start = performance.now();
+      let previous = "";
+      for (;;) {
+        const elapsed = performance.now() - start;
+        if (elapsed >= ms) break;
+        let next = String(Math.floor(rand() * 10));
+        if (next === previous) next = String((Number(next) + 1) % 10);
+        reel.textContent = previous = next;
+        await sleep(40 + 220 * Math.pow(elapsed / ms, 2.4));
+      }
+      reel.textContent = digit;
+      reel.classList.add("set");
+    }
+
+    await sleep(600);
+    for (let w = 0; w < DATA.winners.length; w++) {
+      const draw = lottery.draws[w];
+      const number = pad(draw.ticket);
+      boxes.forEach((reel) => { reel.textContent = "·"; reel.classList.remove("set"); });
+      candidates.replaceChildren();
+      hint.textContent = `${fmt(lottery.tickets)} tickets in the draw`;
+      statusEl.textContent = DATA.winners.length > 1 ? `Drawing ticket for winner #${w + 1}…` : "Drawing the ticket…";
+      if (digits === 1) showCandidates(draw.neighbors);
+      for (let i = 0; i < digits; i++) {
+        await spinReel(boxes[i], number[i], 1100 + (i === digits - 1 ? 700 : 0));
+        const prefix = number.slice(0, i + 1);
+        if (i < digits - 1) {
+          const left = countWithPrefix(prefix);
+          hint.textContent = `${fmt(left)} ticket${left === 1 ? "" : "s"} start with ${prefix}`;
+          if (i === digits - 2) showCandidates(draw.neighbors);
+        }
+        await sleep(350);
+      }
+      hint.textContent = `Ticket #${number}`;
+      for (const chip of candidates.children) {
+        chip.classList.add(chip.dataset.ticket === String(draw.ticket) ? "hit" : "out");
+      }
+      await sleep(900);
+      await celebrate(w);
+      addChip(side, w);
+    }
+    await sleep(300);
     showResults(false);
   }
 
@@ -491,40 +1166,32 @@
     const slot = el("div", "slot", "…");
     area.appendChild(slot);
     const side = sidePanel();
-    main.replaceChildren(area, side);
-    const pool = DATA.names.length ? DATA.names : DATA.winners.map((w) => w.name);
+    mount(area, side);
+    const pool = DATA.names.length ? DATA.names : DATA.winners.map((winner) => winner.name);
 
     for (let w = 0; w < DATA.winners.length; w++) {
       const winner = DATA.winners[w];
       statusEl.textContent = DATA.winners.length > 1 ? `Shuffling for winner #${w + 1}…` : "Shuffling…";
       slot.classList.remove("final");
       const duration = 3400, start = performance.now();
-      let previous = "";
+      let previous = -1;
       for (;;) {
         const elapsed = performance.now() - start;
         if (elapsed >= duration) break;
-        let name = pool[Math.floor(rand() * pool.length)];
-        if (pool.length > 1 && name === previous) name = pool[(pool.indexOf(name) + 1) % pool.length];
-        slot.textContent = previous = name;
+        let index = Math.floor(rand() * pool.length);
+        if (pool.length > 1 && index === previous) index = (index + 1) % pool.length;
+        slot.textContent = pool[index];
+        previous = index;
         await sleep(45 + 360 * Math.pow(elapsed / duration, 2.6));
       }
       slot.textContent = winner.name;
       slot.classList.add("final");
       await sleep(500);
-      await spotlight(winner, w + 1, 2000);
-      addChip(side, winner, w + 1);
+      await celebrate(w, 2000);
+      addChip(side, w);
     }
     await sleep(300);
     showResults(false);
-  }
-
-  function showIdle() {
-    const results = el("div", "results size-2");
-    results.appendChild(el("div", "idle-icon", "🎟️"));
-    results.appendChild(el("div", "idle-title", DATA.idleTitle));
-    results.appendChild(el("h2", null, DATA.idleSubtitle));
-    main.replaceChildren(results);
-    statusEl.textContent = DATA.done;
   }
 
   async function run() {
@@ -536,12 +1203,17 @@
       showResults(animate);
       return;
     }
-    if (DATA.mode === "wheel") await runWheel();
-    else if (DATA.mode === "race") await runRace();
-    else await runShuffle();
+    const shows = {
+      wheel: runWheel, race: runRace, spotlight: runSpotlight, elimination: runElimination,
+      lottery: runLottery, shuffle: runShuffle,
+    };
+    await (shows[DATA.mode] || runShuffle)();
   }
 
-  run().catch(() => showResults(false));
+  run().catch((error) => {
+    console.error(error);
+    showResults(false);
+  });
 })();
 </script>
 </body>

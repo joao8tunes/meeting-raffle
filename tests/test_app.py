@@ -3,6 +3,8 @@ from pathlib import Path
 import pytest
 from streamlit.testing.v1 import AppTest
 
+from raffle.stage import MODE_HELP, MODES
+
 APP = str(Path(__file__).resolve().parent.parent / "streamlit_app.py")
 
 
@@ -25,7 +27,7 @@ def test_first_screen_has_no_names_and_no_errors():
         assert select.value == []
 
 
-@pytest.mark.parametrize("mode", ["wheel", "race", "shuffle", "reveal"])
+@pytest.mark.parametrize("mode", list(MODES))
 def test_sample_data_draw_in_every_mode(mode):
     app = start()
     button(app, "Try it with sample data").click().run()
@@ -33,7 +35,10 @@ def test_sample_data_draw_in_every_mode(mode):
     assert [m.value for m in app.metric][:3] == ["4", "39", "39"]
 
     app.session_state["mode"] = mode
+    if mode == "race":
+        app.session_state["theme"] = "balloons"
     app.run()
+    assert MODE_HELP[mode] in [caption.value for caption in app.caption]
     app.number_input(key="winners").set_value(2).run()
     button(app, "Draw 2 winners").click().run()
     assert not app.exception

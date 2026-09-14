@@ -8,7 +8,7 @@ from __future__ import annotations
 import hashlib
 import inspect
 from datetime import datetime, time, timedelta
-from typing import Dict, List, Optional, Sequence, Tuple
+from typing import Callable, Dict, List, Optional, Sequence, Tuple
 
 import pandas as pd
 import streamlit as st
@@ -25,14 +25,18 @@ from raffle.people import Person, Roster, Rules, build_roster
 from raffle.reports import (engagement_frame, events_frame, insights_workbook, matrix_frame, people_frame,
                             prizes_frame)
 from raffle.samples import demo_files, previous_winners_csv
-from raffle.stage import (DEFAULT_RACE_THEME, MODES, RACE, RACE_THEMES, RACE_THEMES_HELP, STAGE_HEIGHT, WHEEL,
-                          build_idle_stage, build_stage, effective_mode)
+from raffle.stage import (DEFAULT_RACE_THEME, MODE_HELP, MODES, RACE, RACE_THEMES, RACE_THEMES_HELP, STAGE_HEIGHT,
+                          WHEEL, build_idle_stage, build_stage, effective_mode)
 from raffle.timeparse import AUTO, DAY_FIRST, MONTH_FIRST
 
 DATE_ORDER_LABELS = {AUTO: "Detect automatically", DAY_FIRST: "Day / month / year", MONTH_FIRST: "Month / day / year"}
 
 st.set_page_config(page_title="Meeting Raffle", page_icon="🎟️", layout="wide", initial_sidebar_state="expanded")
-st.html("<style>.block-container{padding-top:2.2rem} h1{padding-top:0}</style>")
+st.html(
+    "<style>.block-container{padding-top:2.2rem} h1{padding-top:0}"
+    # Let rows of pills wrap onto a second line instead of scrolling sideways on narrower screens.
+    '[data-testid="stButtonGroup"]>div{flex-wrap:wrap;row-gap:.5rem;overflow-x:visible}</style>'
+)
 
 
 # ---------------------------------------------------------------------------------------------------------------
@@ -110,6 +114,18 @@ def collect_meetings(uploads: Sequence, pasted: str, date_order: str) -> Tuple[L
 # ---------------------------------------------------------------------------------------------------------------
 # Sidebar
 # ---------------------------------------------------------------------------------------------------------------
+
+def keep_selected(key: str, options: Sequence[str], default: str) -> None:
+    """Pills and segmented controls let people unselect the active option: keep their last choice instead.
+
+    The last choice lives under a separate key, so it also survives while the control is hidden.
+    """
+    remembered = f"last_{key}"
+    if st.session_state.get(key) not in options:
+        last = st.session_state.get(remembered)
+        st.session_state[key] = last if last in options else default
+    st.session_state[remembered] = st.session_state[key]
+
 
 def bounded_state(key: str, low: int, high: int, default: int = 1) -> None:
     """Keep a number widget's value valid when its limits change (e.g. fewer people left in the draw)."""
@@ -237,6 +253,11 @@ def sidebar() -> Tuple[List[Meeting], List[LoadResult], int, Rules, Roster]:
 # Main area
 # ---------------------------------------------------------------------------------------------------------------
 
+def lazy(producer: Callable[[], bytes]):
+    """Build big downloads only when clicked (Streamlit versions that accept a callable), otherwise right away."""
+    return producer if "callable" in (st.download_button.__doc__ or "") else producer()
+
+
 def show_html(html: str) -> None:
     if hasattr(st, "iframe"):
         st.iframe(html, height=STAGE_HEIGHT)
@@ -259,7 +280,7 @@ def onboarding() -> None:
     )
     steps[2].markdown(
         "**3. Draw and measure**  \n"
-        "Reveal winners with a wheel, a race or a name shuffle, then compare events in Insights and "
+        "Reveal winners with a wheel, a race, a spotlight, a lottery and more, then compare events in Insights and "
         "download auditable reports."
     )
     st.write("")
@@ -286,12 +307,14 @@ def draw_pool(roster: Roster, allow_repeat: bool, weighted: bool) -> List[Entry]
 def draw_tab(meetings: Sequence[Meeting], roster: Roster, show_emails: bool) -> None:
     settings, stage = st.columns([1, 2.6], gap="large")
     with stage:
-        with st.container(horizontal=True, gap="large"):
-            mode = st.pills("Show", list(MODES), format_func=MODES.get, default=WHEEL, key="mode") or WHEEL
-            theme = DEFAULT_RACE_THEME
-            if mode == RACE:
-                theme = st.pills("Racers", list(RACE_THEMES), format_func=RACE_THEMES.get, default=DEFAULT_RACE_THEME,
-                                 key="theme", help=RACE_THEMES_HELP) or DEFAULT_RACE_THEME
+        keep_selected("mode", list(MODES), WHEEL)
+        mode = st.pills("Show", list(MODES), format_func=MODES.get, key="mode") or WHEEL
+        theme = DEFAULT_RACE_THEME
+        if mode == RACE:
+            keep_selected("theme", list(RACE_THEMES), DEFAULT_RACE_THEME)
+            theme = st.pills("Racers", list(RACE_THEMES), format_func=RACE_THEMES.get, key="theme",
+                             help=RACE_THEMES_HELP) or DEFAULT_RACE_THEME
+        st.caption(MODE_HELP[mode])
     with settings:
         prize = st.text_input("Prize", key="prize", placeholder="e.g. Gift card", max_chars=80).strip()
         allow_repeat = st.toggle("Past winners can win again", key="allow_repeat")
@@ -390,7 +413,8 @@ def people_tab(meetings: Sequence[Meeting], roster: Roster, show_emails: bool) -
     left, right = st.columns(2)
     left.download_button("Download CSV", to_csv(full), "participants.csv", "text/csv", icon=":material/download:",
                          width="stretch")
-    right.download_button("Download Excel", to_excel({"Participants": full, "Files": files_frame(meetings)}),
+    right.download_button("Download Excel",
+                          lazy(lambda: to_excel({"Participants": full, "Files": files_frame(meetings)})),
                           "participants.xlsx", icon=":material/table_view:", width="stretch",
                           mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 
@@ -427,12 +451,14 @@ def winners_tab(meetings: Sequence[Meeting], roster: Roster, show_emails: bool) 
         elif not bool(row["No-show"]) and key in draw.no_shows:
             draw.no_shows.remove(key)
 
-    workbook = results_workbook(rounds(), roster, meetings, timezone_name)
+    snapshot = list(rounds())  # downloads may be built on another thread, after this run
     stamp = datetime.now().strftime("%Y%m%d-%H%M")
     columns = st.columns(4)
-    columns[0].download_button("Winners CSV", to_csv(winners_frame(rounds(), timezone_name)),
+    columns[0].download_button("Winners CSV", to_csv(winners_frame(snapshot, timezone_name)),
                                f"winners-{stamp}.csv", "text/csv", icon=":material/download:", width="stretch")
-    columns[1].download_button("Full results (Excel)", workbook, f"raffle-results-{stamp}.xlsx",
+    columns[1].download_button("Full results (Excel)",
+                               lazy(lambda: results_workbook(snapshot, roster, meetings, timezone_name)),
+                               f"raffle-results-{stamp}.xlsx",
                                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                                icon=":material/table_view:", width="stretch", type="primary")
     if columns[2].button("Undo last round", icon=":material/undo:", width="stretch",
@@ -537,11 +563,12 @@ def insights_tab(meetings: Sequence[Meeting], roster: Roster, rules: Rules, show
     theme = chart_theme()
 
     view_col, download_col = st.columns([3, 1], vertical_alignment="bottom")
-    view = view_col.segmented_control("View", INSIGHT_VIEWS, default="Overview", key="insights_view",
+    keep_selected("insights_view", INSIGHT_VIEWS, "Overview")
+    view = view_col.segmented_control("View", INSIGHT_VIEWS, key="insights_view",
                                       label_visibility="collapsed") or "Overview"
     stamp = datetime.now().strftime("%Y%m%d-%H%M")
     download_col.download_button(
-        "Insights report (Excel)", insights_workbook(insights, meetings, anonymize),
+        "Insights report (Excel)", lazy(lambda: insights_workbook(insights, meetings, anonymize)),
         f"insights-{'anonymized-' if anonymize else ''}{stamp}.xlsx", icon=":material/download:",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", width="stretch", type="primary",
     )
@@ -767,6 +794,11 @@ emails are kept apart.
 - *Minimum minutes* adds up every connection of a person, overlapping devices counted once.
 - *Must be there at the end* checks the last connection against the end of the meeting (or of the time window).
 - *Minimum meetings attended* is for event series: a meeting only counts if the person met the other rules in it.
+
+**Shows**: wheel, race (cars, rockets, paper planes, sailboats, bikes, balloons or trains), spotlight, last one
+standing, lottery, name shuffle or instant. Everyone in the draw appears in the show, up to 2,000 people on
+screen (the lottery has no limit); for bigger audiences a random sample that always includes the winners is
+shown, and the stage says so. Big races get a live leaderboard.
 
 **Insights**: load several meetings to compare audience, new and returning people, retention over time,
 minutes per person, attendance streaks, engagement (reactions, camera, raised hands, unmutes when the
