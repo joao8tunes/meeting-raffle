@@ -73,6 +73,16 @@ def test_near_identical_names_merge_only_when_enabled():
     assert merged.merged_names
 
 
+def test_similar_names_are_found_across_comparison_blocks(monkeypatch):
+    from raffle import people
+
+    monkeypatch.setattr(people, "_PAIRS_BLOCK", 2)
+    people._PAIRS_CACHE.clear()
+    keys = ["ana lima", "bo roe", "cy nova", "ana lima", "zed quill", "cy novaa"]
+    assert sorted(people._similar_pairs(keys, 90)) == [(0, 3), (2, 5)]
+    assert people._similar_pairs(keys, 90) is people._similar_pairs(keys, 90)  # cached
+
+
 def test_similar_names_with_conflicting_emails_never_merge():
     a = Meeting("a", KIND_LIST, [Attendance("Maria Souza", "m1@example.com"),
                                  Attendance("Maria Sousa", "m2@example.com")])

@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from collections import Counter
+import hashlib
+from collections import Counter, OrderedDict
 from dataclasses import dataclass, field
 from datetime import datetime, time, timedelta
 from typing import Dict, FrozenSet, Iterable, List, Optional, Sequence, Tuple
@@ -169,17 +170,43 @@ def _merge_similar(records: List[Tuple[int, str, str]], groups: _UnionFind, thre
     return merged
 
 
+_PAIRS_CACHE: "OrderedDict[str, List[Tuple[int, int]]]" = OrderedDict()
+_PAIRS_BLOCK = 512
+
+
 def _similar_pairs(keys: List[str], threshold: int) -> List[Tuple[int, int]]:
+    """Index pairs (i < j) of similar names.
+
+    Compared block by block so memory stays small for very large lists (a full matrix of 10,000 names would
+    need hundreds of MB). Results are cached by a digest of the input, so the cache holds indexes, not names.
+    """
+    digest = hashlib.sha256("\x1f".join([str(threshold), *keys]).encode("utf-8")).hexdigest()
+    if digest in _PAIRS_CACHE:
+        _PAIRS_CACHE.move_to_end(digest)
+        return _PAIRS_CACHE[digest]
+
     try:
         from rapidfuzz import fuzz, process
     except ImportError:  # pragma: no cover - rapidfuzz is a declared dependency
         from difflib import SequenceMatcher
 
-        return [(i, j) for i in range(len(keys)) for j in range(i + 1, len(keys))
-                if SequenceMatcher(None, keys[i], keys[j]).ratio() * 100 >= threshold]
+        pairs = [(i, j) for i in range(len(keys)) for j in range(i + 1, len(keys))
+                 if SequenceMatcher(None, keys[i], keys[j]).ratio() * 100 >= threshold]
+    else:
+        import numpy as np
 
-    scores = process.cdist(keys, keys, scorer=fuzz.token_sort_ratio, score_cutoff=threshold)
-    return [(int(i), int(j)) for i, j in zip(*scores.nonzero()) if i < j]
+        pairs = []
+        for start in range(0, len(keys), _PAIRS_BLOCK):
+            block = keys[start:start + _PAIRS_BLOCK]
+            scores = process.cdist(block, keys[start:], scorer=fuzz.token_sort_ratio, score_cutoff=threshold,
+                                   dtype=np.uint8, workers=-1)
+            rows, columns = scores.nonzero()
+            pairs.extend((start + int(i), start + int(j)) for i, j in zip(rows, columns) if int(j) > int(i))
+
+    _PAIRS_CACHE[digest] = pairs
+    while len(_PAIRS_CACHE) > 8:
+        _PAIRS_CACHE.popitem(last=False)
+    return pairs
 
 
 def _merge_intervals(intervals: Iterable[Tuple[datetime, datetime]]) -> List[Tuple[datetime, datetime]]:
