@@ -255,7 +255,9 @@ def sidebar() -> Tuple[List[Meeting], List[LoadResult], int, Rules, Roster]:
 
 def lazy(producer: Callable[[], bytes]):
     """Build big downloads only when clicked (Streamlit versions that accept a callable), otherwise right away."""
-    return producer if "callable" in (st.download_button.__doc__ or "") else producer()
+    docs = (st.download_button.__doc__ or "").splitlines()
+    data_types = next((line for line in docs if line.strip().startswith("data :")), "")
+    return producer if "callable" in data_types else producer()
 
 
 def show_html(html: str) -> None:
